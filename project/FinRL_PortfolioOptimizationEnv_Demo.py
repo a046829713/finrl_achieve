@@ -48,9 +48,6 @@ environment = PortfolioOptimizationEnv(
     )
 
 algo = PG(environment, lr=0.0001)
-
-algo.train(episodes=250)
-
-
+algo.train(episodes=500)
 
 torch.save(algo.target_policy.state_dict(), "policy_EIIE.pt")

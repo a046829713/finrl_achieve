@@ -1,0 +1,27 @@
+2024-01-24 14:30 ERROR Traceback (most recent call last):
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\Database\SQL_operate.py", line 13, in get_db_data
+    self.userconn = router.Router().mysql_conn
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\Database\router.py", line 13, in __init__
+    self._mysql_conn = self.get_mysql_conn()
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\Database\router.py", line 27, in get_mysql_conn
+    engine = create_engine(address)
+  File "<string>", line 2, in create_engine
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\sqlalchemy\util\deprecations.py", line 375, in warned
+    return fn(*args, **kwargs)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\sqlalchemy\engine\create.py", line 544, in create_engine
+    dbapi = dialect_cls.dbapi(**dbapi_args)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\sqlalchemy\dialects\mysql\pymysql.py", line 80, in dbapi
+    return __import__("pymysql")
+ModuleNotFoundError: No module named 'pymysql'
+
+2024-01-24 14:33 ERROR Traceback (most recent call last):
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\Database\SQL_operate.py", line 47, in read_Dateframe
+    return pd.read_sql(text_msg, con=conn)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\pandas\io\sql.py", line 2673, in execute
+    cur = self.con.cursor()
+AttributeError: 'Connection' object has no attribute 'cursor'
+

@@ -4,7 +4,12 @@ class AppSettings:
     
     @staticmethod
     def get_Train_config():
-        Train_symbol = ["2330.TW"]
+        Train_symbol = [
+            "2330.TW",
+            "2317.TW",
+            '3008.TW',
+            '1301.TW'
+        ]
         
         
         Train_config = {
@@ -14,7 +19,12 @@ class AppSettings:
         return Train_config
 
     def get_evaluate_config():
-        Test_symobl = ['2330.TW']
+        Test_symobl = [
+            '2330.TW',
+            "2317.TW",
+            '3008.TW',
+            '1301.TW'
+        ]
         evaluate_config = {
             'TOP_BRL':Test_symobl,
             'PORTFOLIO_SIZE' :len(Test_symobl)# Define constants

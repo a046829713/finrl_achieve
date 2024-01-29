@@ -9,6 +9,7 @@ import copy
 from torch.utils.data import DataLoader
 import torch
 from AppSettings import AppSettings
+import time
 
 class PVM:
     def __init__(self, capacity):
@@ -19,12 +20,14 @@ class PVM:
         """
         # initially, memory will have the same actions
         self.capacity = capacity
+
         self.setting = AppSettings.get_Train_config()
         self.reset()
-    
+
     def reset(self):
-        self.memory = [np.array([1] + [0] * self.setting['PORTFOLIO_SIZE'], dtype=np.float32)] * (self.capacity + 1)
-        self.index = 0 # initial index to retrieve data
+        self.memory = [np.array(
+            [1] + [0] * self.setting['PORTFOLIO_SIZE'], dtype=np.float32)] * (self.capacity + 1)
+        self.index = 0  # initial index to retrieve data
 
     def retrieve(self):
         last_action = self.memory[self.index]
@@ -33,80 +36,81 @@ class PVM:
 
     def add(self, action):
         self.memory[self.index] = action
-        
-        
+
+
 class ReplayBuffer:
-  def __init__(self, capacity):
-    """Initializes replay buffer.
+    def __init__(self, capacity):
+        """Initializes replay buffer.
 
-    Args:
-      capacity: Max capacity of buffer.
-    """
-    self.buffer = deque(maxlen=capacity)
+        Args:
+          capacity: Max capacity of buffer.
+        """
+        self.buffer = deque(maxlen=capacity)
 
-  def __len__(self):
-    """Represents the size of the buffer
+    def __len__(self):
+        """Represents the size of the buffer
 
-    Returns:
-      Size of the buffer.
-    """
-    return len(self.buffer)
+        Returns:
+          Size of the buffer.
+        """
+        return len(self.buffer)
 
-  def append(self, experience):
-    """Append experience to buffer. When buffer is full, it pops
-       an old experience.
+    def append(self, experience):
+        """Append experience to buffer. When buffer is full, it pops
+           an old experience.
 
-    Args:
-      experience: experience to be saved.
-    """
-    self.buffer.append(experience)
+        Args:
+          experience: experience to be saved.
+        """
+        self.buffer.append(experience)
 
-  def sample(self):
-    """Sample from replay buffer. All data from replay buffer is
-    returned and the buffer is cleared.
+    def sample(self):
+        """Sample from replay buffer. All data from replay buffer is
+        returned and the buffer is cleared.
 
-    Returns:
-      Sample of batch_size size.
-    """
-    buffer = list(self.buffer)
-    self.buffer.clear()
-    return buffer
+        Returns:
+          Sample of batch_size size.
+        """
+        buffer = list(self.buffer)
+        self.buffer.clear()
+        return buffer
+
 
 class RLDataset(IterableDataset):
-  def __init__(self, buffer):
-    """Initializes reinforcement learning dataset.
+    def __init__(self, buffer):
+        """Initializes reinforcement learning dataset.
+
+        Args:
+            buffer: replay buffer to become iterable dataset.
+
+        Note:
+            It's a subclass of pytorch's IterableDataset,
+            check https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset
+        """
+        self.buffer = buffer
+
+    def __iter__(self):
+        """Iterates over RLDataset.
+
+        Returns:
+          Every experience of a sample from replay buffer.
+        """
+        for experience in self.buffer.sample():
+            yield experience
+
+
+def polyak_average(net, target_net, tau=0.01):
+    """Applies polyak average to incrementally update target net.
 
     Args:
-        buffer: replay buffer to become iterable dataset.
-
-    Note:
-        It's a subclass of pytorch's IterableDataset,
-        check https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset
+      net: trained neural network.
+      target_net: target neural network.
+      tau: update rate.
     """
-    self.buffer = buffer
+    for qp, tp in zip(net.parameters(), target_net.parameters()):
+        tp.data.copy_(tau * qp.data + (1 - tau) * tp.data)
 
-  def __iter__(self):
-    """Iterates over RLDataset.
 
-    Returns:
-      Every experience of a sample from replay buffer.
-    """
-    for experience in self.buffer.sample():
-        yield experience
-        
-        
-def polyak_average(net, target_net, tau=0.01):
-  """Applies polyak average to incrementally update target net.
-
-  Args:
-    net: trained neural network.
-    target_net: target neural network.
-    tau: update rate.
-  """
-  for qp, tp in zip(net.parameters(), target_net.parameters()):
-    tp.data.copy_(tau * qp.data + (1 - tau) * tp.data)
-    
-    
 class PG:
     def __init__(self,
                  env,
@@ -153,23 +157,25 @@ class PG:
             episodes: Number of episodes to simulate
         """
         for i in tqdm(range(1, episodes + 1)):
-            obs = self.env.reset() # observation
-            self.pvm.reset() # reset portfolio vector memory
+            obs = self.env.reset()  # observation
+            self.pvm.reset()  # reset portfolio vector memory
             done = False
 
             while not done:
                 # define last_action and action and update portfolio vector memory
                 last_action = self.pvm.retrieve()
-                obs_batch = np.expand_dims(obs, axis=0)
+                obs_batch = np.expand_dims(obs, axis=0)# (1, 3, 4, 50) # batch_szie,futrue_size,category_of_market,window
                 last_action_batch = np.expand_dims(last_action, axis=0)
-                action = self.policy(obs_batch, last_action_batch)
+                action = self.policy(obs_batch, last_action_batch)# 這裡的last_action_batch 是 wt-1
                 self.pvm.add(action)
 
                 # run simulation step
-                next_obs, reward, done, info = self.env.step(action)
+                next_obs, reward, done, info = self.env.step(action)# 這裡的last_action_batch 是 wt
 
                 # add experience to replay buffer
-                exp = (obs, last_action, info["price_variation"], info["trf_mu"])
+                exp = (obs, last_action,
+                       info["price_variation"], info["trf_mu"])
+
                 self.buffer.append(exp)
 
                 # update policy networks
@@ -181,14 +187,13 @@ class PG:
             # gradient ascent with episode remaining buffer data
             self._gradient_ascent()
 
-
-
     def _gradient_ascent(self):
         # update target neural network
         polyak_average(self.policy, self.target_policy, tau=self.tau)
 
         # get batch data from dataloader
-        obs, last_actions, price_variations, trf_mu = next(iter(self.dataloader))
+        obs, last_actions, price_variations, trf_mu = next(
+            iter(self.dataloader))
         obs = obs.to(self.policy.device)
         last_actions = last_actions.to(self.policy.device)
         price_variations = price_variations.to(self.policy.device)
@@ -196,7 +201,9 @@ class PG:
 
         # define policy loss (negative for gradient ascent)
         mu = self.policy.mu(obs, last_actions)
-        policy_loss = - torch.mean(torch.log(torch.sum(mu * price_variations * trf_mu, dim=1)))
+        policy_loss = - \
+            torch.mean(
+                torch.log(torch.sum(mu * price_variations * trf_mu, dim=1)))
 
         # update policy network
         self.policy.zero_grad()
