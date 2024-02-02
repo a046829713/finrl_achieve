@@ -1,9 +1,8 @@
 import pandas as pd
-from utils.Date_time import parser_time
+from Major.Date_time import parser_time
 import numpy as np
 from Count.Base import Pandas_count
 from decimal import Decimal
-
 
 class Datatransformer:
     def get_tradedata(self, original_df: pd.DataFrame, freq: int = 30):
@@ -54,7 +53,7 @@ class Datatransformer:
 
         return df
 
-    def calculation_size(self, last_status, current_size, symbol_map,exchange_info:dict) -> dict:
+    def calculation_size(self, last_status, current_size, symbol_map, exchange_info: dict) -> dict:
         """_summary_
 
         Args:
@@ -69,7 +68,7 @@ class Datatransformer:
             dict: _description_
         """
         min_notional_map = self.Get_MIN_NOTIONAL(exchange_info=exchange_info)
-        
+
         out_dict = {}
         for ID_phonenumber, value in last_status.items():
             diff_map = self._calculation_size(
@@ -78,7 +77,7 @@ class Datatransformer:
 
         return out_dict
 
-    def _calculation_size(self, systeam_size: dict, true_size: dict, symbol_map: dict,min_notional_map:dict) -> dict:
+    def _calculation_size(self, systeam_size: dict, true_size: dict, symbol_map: dict, min_notional_map: dict) -> dict:
         """
             用來比較 系統部位 和 Binance 交易所的實際部位
 
@@ -93,7 +92,7 @@ class Datatransformer:
             當計算出來的結果 + 就是要買 - 就是要賣
 
         """
-        
+
         combin_dict = {}
         for name_key, status in systeam_size.items():
             combin_symobl = name_key.split('-')[0]
@@ -162,7 +161,7 @@ class Datatransformer:
 
         return new_df, df
 
-    def target_symobl(self, market_symobl: list, binance_catch: list):
+    def target_symobl_merge(self, market_symobl: list, binance_catch: list):
         """
             用來將所有商品合併在一起,當市場狀況很差的時候,只監控比特幣
         Args:
@@ -190,7 +189,7 @@ class Datatransformer:
 
     def generate_table_name(self, symbol_name, symbol_type, time_type, iflower=True):
         """
-        根据给定的参数生成表名。
+        根據給定的參數產生表名
 
         参数:
         symbol_name (str): 符号名
@@ -199,7 +198,7 @@ class Datatransformer:
         iflower (bool): 如果为True，则将表名转换为小写
 
         返回:
-        str: 生成的表名
+            str: 生成的表名
         """
         # 根据 symbol_type 修改符号名
         if symbol_type == 'FUTURES':
@@ -219,10 +218,9 @@ class Datatransformer:
 
         return tb_symbol_name
 
-    def get_symobl_filter_useful(self, all_symbols):
+    def get_mtm_filter_symbol(self, all_symbols):
         """
             將過濾完的標的(can trade symobl)輸出
-
         """
         out_list = []
         for each_data in all_symbols:
@@ -239,6 +237,32 @@ class Datatransformer:
 
         sort_example = sorted(out_list, key=lambda x: x[1], reverse=True)
         return sort_example
+
+    def get_volume_top_filter_symobl(self, all_symbols):
+        """
+            取得30內成交金額最高的前幾名
+        Args:
+            all_symbols (_type_): _description_            
+
+        Returns:
+            _type_: _description_
+        """
+        compare_dict = {}
+        for each_data in all_symbols:
+            symbolname = each_data[0]
+            data = each_data[1]
+            # 不想要太新的商品
+            if len(data) > 120:
+                # 價格太低的商品不要
+                if data.iloc[-1]['Close'] > 20:
+                    filter_df = data.tail(30)
+                    compare_dict.update(
+                        {symbolname: sum(filter_df['Close'] * filter_df['Volume'])})
+
+        sorted_compare_dict = sorted(
+            compare_dict, key=compare_dict.get, reverse=True)
+        
+        return [symbolname.split('-')[0].upper() for symbolname in sorted_compare_dict]
 
     def change_min_postion(self, all_order_finally: dict, MinimumQuantity: dict):
         out_dict = {}
@@ -277,16 +301,17 @@ class Datatransformer:
                                 ready_to_order_size else -1 * filter_size})
 
         return out_dict
-    
-    def Get_MIN_NOTIONAL(self,exchange_info:dict):
+
+    def Get_MIN_NOTIONAL(self, exchange_info: dict):
         """
             每個商品有自己的最小下單金額限制
             為了避免下單的波動設計了2倍的設計
         """
-        out_dict ={}
+        out_dict = {}
         for symbol_info in exchange_info['symbols']:
             for filter in symbol_info['filters']:
                 if filter['filterType'] == 'MIN_NOTIONAL':
-                    out_dict.update({symbol_info['symbol']:float(filter['notional'])*2})
-        
+                    out_dict.update(
+                        {symbol_info['symbol']: float(filter['notional'])*2})
+
         return out_dict

@@ -1,8 +1,3 @@
-"""
-    refer to 'finlab_crypto' package
-    url : 'https://github.com/finlab-python/finlab_crypto'
-
-"""
 from binance.client import Client
 from binance.enums import HistoricalKlinesType
 from binance.enums import SIDE_BUY, ORDER_TYPE_MARKET, ORDER_TYPE_LIMIT, SIDE_SELL
@@ -15,7 +10,7 @@ from datetime import timedelta, datetime
 import re
 import time
 import json
-from utils.Date_time import parser_time
+from Major.Date_time import parser_time
 from utils.Debug_tool import debug
 import time
 from Database import SQL_operate
@@ -23,7 +18,11 @@ import copy
 from tqdm.auto import tqdm
 from .UserManager import UserManager
 from Infrastructure.AlertMsg import LINE_Alert
+"""
+    refer to 'finlab_crypto' package
+    url : 'https://github.com/finlab-python/finlab_crypto'
 
+"""
 
 def SetConnectClose(custom_user):
     """
@@ -126,6 +125,7 @@ class BinanceDate(object):
                     endTime=end_ts
                 )
 
+                
                 # append this loops data to our output data
                 if temp_data:
                     output_data += temp_data

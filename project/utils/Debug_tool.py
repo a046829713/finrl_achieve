@@ -16,7 +16,8 @@ logging.basicConfig(level=logging.ERROR, format='%(asctime)s %(levelname)s %(mes
 
 class debug():
     _count_map = {}
-    
+    _counts = 0
+
     @staticmethod
     def print_info(error_msg: str = None):
         
@@ -63,7 +64,9 @@ class debug():
         Args:
             func (_type_): callable
         """
-        def wrapper(*args, **kwargs):  
+        def wrapper(*args, **kwargs):
+            debug._counts += 1
+
             begin_time = time()
             result = func(*args, **kwargs)  
             end_time = time()            
@@ -74,6 +77,9 @@ class debug():
             else:
                 countMap[func.__name__] = elapsed_time
             
+            if debug._counts % 1000 == 0:
+                print(countMap) 
+                print('*'*120)
             return result
 
         return wrapper

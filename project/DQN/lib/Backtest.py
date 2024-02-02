@@ -1,8 +1,8 @@
 from utils.AppSetting import AppSetting
 import numpy as np
-from Plot_draw.Picture_Mode import Picture_maker
+# from Plot_draw.Picture_Mode import Picture_maker
 from Count import nb
-from Base.Strategy_base import Np_Order_Info, Portfolio_Order_Info
+# from Base.Strategy_base import Np_Order_Info, Portfolio_Order_Info
 import pandas as pd
 from .common import Strategy_base_DQN
 from .run_model import Record_Orders
@@ -24,7 +24,6 @@ class Backtest(object):
 
     def order_becktest(self, order: list):
         """
-
         order (list):
             類神經網絡所產生的訂單
 

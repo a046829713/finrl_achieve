@@ -1,4 +1,4 @@
-""" all data and transformer active """
+""" all data and datatransformer active """
 from Database import SQL_operate
 from Database.SQL_operate import SqlSentense
 import pandas as pd
@@ -23,7 +23,7 @@ class DataProvider:
     def __init__(self):
         self.Binanceapp = custom.Binance_server()
         self.SQL = SQL_operate.DB_operate()
-        self.transformer = Datatransformer()
+        self.datatransformer = Datatransformer()
 
     def reload_data(self, symbol_name='BTCUSDT', time_type=None, iflower=True, reload_type=None, symbol_type=None):
         assert symbol_type is not None, "ERROR symbol type can't be None"
@@ -32,7 +32,7 @@ class DataProvider:
         symbol_name_list = self.SQL.get_db_data('show tables;')
         symbol_name_list = [y[0] for y in symbol_name_list]
 
-        table_name = self.transformer.generate_table_name(
+        table_name = self.datatransformer.generate_table_name(
             symbol_name, symbol_type, time_type, iflower)
 
         if table_name in symbol_name_list:
@@ -69,7 +69,7 @@ class DataProvider:
             保存資料到SQL
         """
         # 你可以这样调用这个函数
-        table_name = self.transformer.generate_table_name(
+        table_name = self.datatransformer.generate_table_name(
             symbol_name, symbol_type, time_type, iflower)
 
         if exists == 'replace':
@@ -128,9 +128,8 @@ class DataProvider:
         """
         out_list = []
         for symbol_name in self.Binanceapp.get_targetsymobls():
-            tb_symbol_name = self.transformer.generate_table_name(
+            tb_symbol_name = self.datatransformer.generate_table_name(
                 symbol_name, symbol_type, time_type, iflower)
-
             each_df = self.SQL.read_Dateframe(tb_symbol_name)
             out_list.append([tb_symbol_name, each_df])
 
@@ -146,7 +145,7 @@ class DataProvider:
         original_df, eachCatchDf = self.reload_data(
             symbol_name, time_type='1m', reload_type="all_data", symbol_type=symbol_type)
 
-        new_df = self.transformer.get_tradedata(original_df, freq=freq)
+        new_df = self.datatransformer.get_tradedata(original_df, freq=freq)
 
         if save:
             if symbol_type == 'FUTURES':
@@ -174,9 +173,25 @@ class DataProvider:
             return original_df, eachCatchDf
 
     def get_trade_data(self, original_df, freq):
-        new_df = self.transformer.get_tradedata(original_df, freq=freq)
+        new_df = self.datatransformer.get_tradedata(original_df, freq=freq)
         return new_df
 
+    def filter_useful_symbol(self, all_symbols: list, tag: str ):
+        if tag == 'VOLUME_TYPE':
+            return self.datatransformer.get_volume_top_filter_symobl(all_symbols)
+        elif tag == 'MTM_TYPE':
+            return self.datatransformer.get_mtm_filter_symbol(all_symbols)
+
+    def last_profolio_adjust_time(self):
+        data = self.SQL.get_db_data('select * from interval_record')
+        print(data)
+        return datetime.datetime.strptime(data[0][1],"%Y-%m-%d %H:%M:%S.%f")
+
+    def target_symobl_merge(self, market_symobl: list, binance_catch: list):
+        pass
+        # return self.datatransformer.target_symobl_merge(market_symobl, binance_catch)
+
+        
 
 class AsyncDataProvider():
     def __init__(self) -> None:
