@@ -23,8 +23,8 @@ class Router:
         Returns:
             engine.base.Connection: _description_
         """
-        address = "mysql+pymysql://root:test@localhost:3306/crypto_data"        
-        engine = create_engine(address)
+        self.address = "mysql+pymysql://root:test@localhost:3306"        
+        engine = create_engine(self.address + '/crypto_data')
         connect = engine.connect()
         return connect
 
@@ -71,3 +71,16 @@ class Router:
 
         """
         return self.check_mysql_conn_alive()
+    
+    def get_engine_without_db(self) :
+        """建立並返回一個不指定資料庫的引擎"""
+        return create_engine(self.address)
+    
+    def create_database_if_not_exists(self, db_name: str):
+        """檢查資料庫是否存在，若不存在則創建"""
+        engine = self.get_engine_without_db()
+        
+        with engine.connect() as conn:
+            conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {db_name}"))
+            conn.execute(text("commit"))
+

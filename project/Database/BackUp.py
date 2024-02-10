@@ -23,14 +23,15 @@ class DatabasePreparator:
         """
             用來檢查資料庫是否存在
         """
-        connection = Router().mysql_conn
-        with connection as conn:
-            databases = conn.execute(
-                text("show databases like 'crypto_data';"))
-            if databases.rowcount > 0:
-                pass
-            else:
-                conn.execute(text("CREATE DATABASE crypto_data"))
+        try:
+            connection = Router().mysql_conn
+            with connection as conn:
+                databases = conn.execute(
+                    text("show databases like 'crypto_data';"))
+                if databases.rowcount > 0:
+                    pass
+        except:
+            Router().create_database_if_not_exists('crypto_data')
 
     def check_file(self, filename: str):
         """ 檢查檔案是否存在 否則創建 """
