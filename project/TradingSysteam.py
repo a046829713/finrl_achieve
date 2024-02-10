@@ -14,7 +14,7 @@ from binance.exceptions import BinanceAPIException
 from EIIE.lib.engine import EngineBase
 from EIIE.lib.DataPerprocess import DataPerprocess
 import asyncio
-
+import os
 
 class Trading_system():
     def __init__(self) -> None:
@@ -102,7 +102,8 @@ class Trading_system():
         Returns:
             _type_: _description_
         """
-        return EngineBase(Meta_path='EIIE\Meta\policy_EIIE.pt')
+        meta_path = os.path.join('EIIE', 'Meta', 'policy_EIIE.pt')
+        return EngineBase(Meta_path=meta_path)
 
     def reload_all_futures_data(self):
         """
