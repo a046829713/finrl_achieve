@@ -31,7 +31,7 @@ class DatabasePreparator:
                 if databases.rowcount > 0:
                     pass
         except:
-            Router().create_database_if_not_exists('crypto_data')
+            Router.create_database_if_not_exists('crypto_data')
 
     def check_file(self, filename: str):
         """ 檢查檔案是否存在 否則創建 """

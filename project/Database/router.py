@@ -72,13 +72,11 @@ class Router:
         """
         return self.check_mysql_conn_alive()
     
-    def get_engine_without_db(self) :
-        """建立並返回一個不指定資料庫的引擎"""
-        return create_engine(self.address)
-    
-    def create_database_if_not_exists(self, db_name: str):
+    @staticmethod
+    def create_database_if_not_exists(db_name: str):
         """檢查資料庫是否存在，若不存在則創建"""
-        engine = self.get_engine_without_db()
+        """建立並返回一個不指定資料庫的引擎"""
+        engine = create_engine("mysql+pymysql://root:test@localhost:3306")
         
         with engine.connect() as conn:
             conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {db_name}"))
