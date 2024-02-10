@@ -305,23 +305,21 @@ def safe_run(target, *args, **kwargs):
 
 # TradingSysteam.py
 if __name__ == '__main__':
-    app = Trading_system()
-    app.export_table_data('users')
-    # exit_event = threading.Event()
-    # trading_system = AsyncTrading_system()
+    exit_event = threading.Event()
+    trading_system = AsyncTrading_system()
 
-    # # 使用 safe_run 啟動每個線程
-    # thread1 = threading.Thread(target=safe_run, args=(
-    #     run_asyncio_loop, trading_system.asyncDataProvider.subscriptionData, trading_system.targetsymbols), kwargs={'exit_event': exit_event})
-    # thread2 = threading.Thread(target=safe_run, args=(
-    #     run_asyncio_loop, trading_system.main))
-    # thread3 = threading.Thread(
-    #     target=safe_run, args=(trading_system.DailyChange,))
+    # 使用 safe_run 啟動每個線程
+    thread1 = threading.Thread(target=safe_run, args=(
+        run_asyncio_loop, trading_system.asyncDataProvider.subscriptionData, trading_system.targetsymbols), kwargs={'exit_event': exit_event})
+    thread2 = threading.Thread(target=safe_run, args=(
+        run_asyncio_loop, trading_system.main))
+    thread3 = threading.Thread(
+        target=safe_run, args=(trading_system.DailyChange,))
 
-    # thread1.start()
-    # thread2.start()
-    # thread3.start()
+    thread1.start()
+    thread2.start()
+    thread3.start()
 
-    # thread1.join()
-    # thread2.join()
-    # thread3.join()
+    thread1.join()
+    thread2.join()
+    thread3.join()
