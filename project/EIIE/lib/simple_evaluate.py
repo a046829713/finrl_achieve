@@ -7,7 +7,7 @@ import numpy as np
 from EIIE.lib.model import GradientPolicy
 import torch
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 
 
 def update_test_model_performance(environment: PortfolioOptimizationEnv, Tag, results: dict, Meta_path:str):
