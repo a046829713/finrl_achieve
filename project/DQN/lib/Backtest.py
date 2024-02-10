@@ -5,7 +5,7 @@ from Count import nb
 # from Base.Strategy_base import Np_Order_Info, Portfolio_Order_Info
 import pandas as pd
 from .common import Strategy_base_DQN
-from .run_model import Record_Orders
+from ...EIIE.lib.run_model import Record_Orders
 import copy
 from Count.Base import Event_count
 import datetime

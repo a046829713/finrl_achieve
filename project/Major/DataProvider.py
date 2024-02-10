@@ -11,7 +11,7 @@ import asyncio
 from . import custom
 from .UserManager import UserManager
 from .Datatransformer import Datatransformer
-
+import time
 
 class DataProvider:
     """
@@ -172,26 +172,38 @@ class DataProvider:
 
             return original_df, eachCatchDf
 
-    def get_trade_data(self, original_df, freq):
-        new_df = self.datatransformer.get_tradedata(original_df, freq=freq)
-        return new_df
+    def get_trade_data(self, targetsymbols, symbol_map, freq):
+        finally_df = pd.DataFrame()
+        for symbol_name in targetsymbols:
+            # 取得可交易之資料
+            each_df = self.datatransformer.get_tradedata(
+                symbol_map[symbol_name], freq=freq)
 
-    def filter_useful_symbol(self, all_symbols: list, tag: str ):
+            each_df['tic'] = symbol_name
+            each_df.reset_index(inplace=True)
+            each_df.rename(columns={"Datetime": 'date',
+                           "Close": "close",
+                           "High": "high",
+                           "Low": "low",
+                           'Open': 'open',
+                           'Volume': 'volume'
+                           }, inplace=True)
+            
+            finally_df = pd.concat([finally_df, each_df])
+
+        finally_df = self.datatransformer.fix_data_different_len_and_na(finally_df)
+        return finally_df
+        
+    def filter_useful_symbol(self, all_symbols: list, tag: str):
         if tag == 'VOLUME_TYPE':
-            return self.datatransformer.get_volume_top_filter_symobl(all_symbols)
+            return self.datatransformer.get_volume_top_filter_symobl(all_symbols, max_symbols=11)
         elif tag == 'MTM_TYPE':
             return self.datatransformer.get_mtm_filter_symbol(all_symbols)
 
     def last_profolio_adjust_time(self):
         data = self.SQL.get_db_data('select * from interval_record')
-        print(data)
-        return datetime.datetime.strptime(data[0][1],"%Y-%m-%d %H:%M:%S.%f")
+        return datetime.datetime.strptime(data[0][1], "%Y-%m-%d %H:%M:%S.%f")
 
-    def target_symobl_merge(self, market_symobl: list, binance_catch: list):
-        pass
-        # return self.datatransformer.target_symobl_merge(market_symobl, binance_catch)
-
-        
 
 class AsyncDataProvider():
     def __init__(self) -> None:
@@ -223,19 +235,21 @@ class AsyncDataProvider():
         async with self.lock:
             return dict(self.all_data)
 
-    async def subscriptionData(self, streams: set, exit_event=None):
+    async def subscriptionData(self, streams: list, exit_event=None):
         """ 用來訂閱系統資料
 
         Args:
-            input streams :{'DEFIUSDT', 'SOLUSDT', 'COMPUSDT', 'AAVEUSDT', 'AVAXUSDT'}
+            input streams :['DEFIUSDT', 'SOLUSDT', 'COMPUSDT', 'AAVEUSDT', 'AVAXUSDT']
             output streams (list): ['btcusdt@kline_1m', 'ethusdt@kline_1m', 'bnbusdt@kline_1m']
 
         Returns:
             _type_: Not return
         """
 
-        def changestreams(streams: set):
-            return [each_stream.lower() + "@kline_1m" for each_stream in list(streams)]
+        def changestreams(streams: list):
+            if not isinstance(streams, list):
+                streams = list(streams)
+            return [each_stream.lower() + "@kline_1m" for each_stream in streams]
 
         streams = changestreams(streams)
         account, passwd = UserManager.GetAccount_Passwd('author')

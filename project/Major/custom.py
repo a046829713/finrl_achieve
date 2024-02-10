@@ -24,10 +24,10 @@ from Infrastructure.AlertMsg import LINE_Alert
 
 """
 
+
 def SetConnectClose(custom_user):
     """
-        如果使用者是所有人通常都會從外部進來,作者就從資料庫拿取就好
-    
+        如果使用者是所有人通常都會從外部進來,作者就從資料庫拿取就好    
     Returns:
         wrapper function
     """
@@ -38,7 +38,6 @@ def SetConnectClose(custom_user):
         def wrapper(self, *args, **kwargs):
             if custom_user == 'author':
                 account, passwd = UserManager.GetAccount_Passwd(custom_user)
-
                 client = Client(account, passwd)
                 result = func(self, client, *args, **kwargs)
                 client.close_connection()
@@ -125,7 +124,6 @@ class BinanceDate(object):
                     endTime=end_ts
                 )
 
-                
                 # append this loops data to our output data
                 if temp_data:
                     output_data += temp_data
@@ -441,7 +439,7 @@ class Binance_server(object):
                             # 比下單資金更大才行
                             if float(Response['maxNotionalValue']) > ready_to_order_size * symbol_map[each_symbol]['Close'].iloc[-1]:
                                 last_leverage = leverage
-                                leverage += 1
+                                leverage += 1                                
                                 Response = client.futures_change_leverage(
                                     symbol=_symbol, leverage=leverage)
                             else:

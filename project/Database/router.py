@@ -15,7 +15,7 @@ class Router:
     def get_mysql_conn(self) -> engine.base.Connection:
         """    
         user: root
-        password: 123456
+        password: test
         host: localhost
         port: 3306
         database: crypto_data

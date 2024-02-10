@@ -221,9 +221,9 @@ class PortfolioOptimizationEnv(gym.Env):
         if self._new_gym_api:
             return self._state, self._info
         return self._state
-    
+
     @debug.record_time_add
-    def step(self, actions):
+    def step(self, actions, plot_if=True):
         """Performs a simulation step.
 
         Args:
@@ -251,36 +251,37 @@ class PortfolioOptimizationEnv(gym.Env):
         self._terminal = self._time_index >= len(self._sorted_times) - 1
 
         if self._terminal:
-            print("本次結束,開始保存圖片")
-            metrics_df = pd.DataFrame(
-                {"date": self._date_memory,
-                 "returns": self._portfolio_return_memory,
-                 "rewards": self._portfolio_reward_memory,
-                 "portfolio_values": self._asset_memory["final"]}
-            )
-            metrics_df.set_index("date", inplace=True)
+            if plot_if:
+                print("本次結束,開始保存圖片")
+                metrics_df = pd.DataFrame(
+                    {"date": self._date_memory,
+                    "returns": self._portfolio_return_memory,
+                    "rewards": self._portfolio_reward_memory,
+                    "portfolio_values": self._asset_memory["final"]}
+                )
+                metrics_df.set_index("date", inplace=True)
 
-            self._plot(metrics_df["portfolio_values"], "Portfolio Value Over Time", "Time",
-                       "Portfolio value", self._results_file, "portfolio_value.png", specified_color='r')
-            self._plot(self._portfolio_reward_memory, "Reward Over Time", "Time",
-                       "Reward", self._results_file, "reward.png", specified_color='r')
-            self._plot(self._actions_memory, "Actions performed",
-                       "Time", "Weight", self._results_file, "actions.png",special = True)
+                self._plot(metrics_df["portfolio_values"], "Portfolio Value Over Time", "Time",
+                        "Portfolio value", self._results_file, "portfolio_value.png", specified_color='r')
+                self._plot(self._portfolio_reward_memory, "Reward Over Time", "Time",
+                        "Reward", self._results_file, "reward.png", specified_color='r')
+                self._plot(self._actions_memory, "Actions performed",
+                        "Time", "Weight", self._results_file, "actions.png", special=True)
 
-            print("=================================")
-            print("Initial portfolio value:{}".format(
-                self._asset_memory['final'][0]))
-            print("Final portfolio value: {}".format(self._portfolio_value))
-            print("Final accumulative portfolio value: {}".format(
-                self._portfolio_value / self._asset_memory['final'][0]))
-            print("Maximum DrawDown: {}".format(
-                qs.stats.max_drawdown(metrics_df["portfolio_values"])))
-            print("Sharpe ratio: {}".format(
-                qs.stats.sharpe(metrics_df["returns"])))
-            print("=================================")
+                print("=================================")
+                print("Initial portfolio value:{}".format(
+                    self._asset_memory['final'][0]))
+                print("Final portfolio value: {}".format(self._portfolio_value))
+                print("Final accumulative portfolio value: {}".format(
+                    self._portfolio_value / self._asset_memory['final'][0]))
+                print("Maximum DrawDown: {}".format(
+                    qs.stats.max_drawdown(metrics_df["portfolio_values"])))
+                print("Sharpe ratio: {}".format(
+                    qs.stats.sharpe(metrics_df["returns"])))
+                print("=================================")
 
-            qs.plots.snapshot(metrics_df["returns"], show=False,
-                              savefig=self._results_file / "portfolio_summary.png")
+                qs.plots.snapshot(metrics_df["returns"], show=False,
+                                savefig=self._results_file / "portfolio_summary.png")
             if self._new_gym_api:
                 return self._state, self._reward, self._terminal, False, self._info
             return self._state, self._reward, self._terminal, self._info
@@ -649,8 +650,8 @@ class PortfolioOptimizationEnv(gym.Env):
             Observation of current simulation step.
         """
         return self._state
-    
-    def _plot(self, data, title: str, xlabel: str, ylabel, save_path, file_name, specified_color: str = None,special= False):
+
+    def _plot(self, data, title: str, xlabel: str, ylabel, save_path, file_name, specified_color: str = None, special=False):
         """
             绘制并保存图表。
 
@@ -665,9 +666,10 @@ class PortfolioOptimizationEnv(gym.Env):
         """
         plt.figure()
         if special:
-            for i, asset_data in enumerate(np.array(data).T):  # 转置data，以便每次循环处理一个资产的数据
+            # 转置data，以便每次循环处理一个资产的数据
+            for i, asset_data in enumerate(np.array(data).T):
                 local_tic = ['Cash_asset']
-                local_tic.extend(self._tic_list) 
+                local_tic.extend(self._tic_list)
                 plt.plot(asset_data, label=local_tic[i])
         else:
             if specified_color is not None:

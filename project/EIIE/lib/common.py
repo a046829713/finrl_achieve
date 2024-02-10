@@ -10,8 +10,9 @@ from torch.utils.data import DataLoader
 import torch
 import time
 
+
 class PVM:
-    def __init__(self, capacity,portfolio_size):
+    def __init__(self, capacity, portfolio_size):
         """Initializes portfolio vector memory.
         Args:
           capacity: Max capacity of memory.
@@ -19,7 +20,7 @@ class PVM:
         """
         # initially, memory will have the same actions
         self.capacity = capacity
-        self.portfolio_size = portfolio_size        
+        self.portfolio_size = portfolio_size
         self.reset()
 
     def reset(self):
@@ -45,7 +46,7 @@ class ReplayBuffer:
           nb: Number of periods in a mini-batch.
         """
         self.buffer = deque(maxlen=capacity)
-        self.beta = 5e-5  
+        self.beta = 5e-5
         self.nb = nb
 
     def __len__(self):
@@ -73,7 +74,7 @@ class ReplayBuffer:
     #       Sample of batch_size size.
     #     """
     #     buffer = list(self.buffer)
-       
+
     #     self.buffer.clear()
     #     return buffer
 
@@ -87,7 +88,7 @@ class ReplayBuffer:
         if buffer_length < self.nb:
             return []  # Not enough data to form a mini-batch
 
-        probabilities = [self.beta * (1 - self.beta) ** (buffer_length - i - self.nb) 
+        probabilities = [self.beta * (1 - self.beta) ** (buffer_length - i - self.nb)
                          for i in range(buffer_length - self.nb + 1)]
 
         # Normalize probabilities
@@ -97,11 +98,13 @@ class ReplayBuffer:
         batches = []
         buffer = list(self.buffer)
         for _ in range(self.nb):
-            start_idx = np.random.choice(range(buffer_length - self.nb + 1), p=probabilities)
+            start_idx = np.random.choice(
+                range(buffer_length - self.nb + 1), p=probabilities)
             batches.extend(buffer[start_idx:start_idx + self.nb])
 
         return batches
-    
+
+
 class RLDataset(IterableDataset):
     def __init__(self, buffer):
         """Initializes reinforcement learning dataset.
@@ -160,12 +163,13 @@ class PG:
         self.policy = GradientPolicy()
         self.policy.to(self.policy.device)
         self.target_policy = copy.deepcopy(self.policy)
-        self.optimizer = optimizer(self.policy.parameters(), lr=lr,weight_decay=1e-8)
+        self.optimizer = optimizer(
+            self.policy.parameters(), lr=lr, weight_decay=1e-8)
         self.tau = tau
 
         # replay buffer and portfolio vector memory
         self.batch_size = batch_size
-        self.buffer = ReplayBuffer(capacity=10000,nb = batch_size)
+        self.buffer = ReplayBuffer(capacity=10000, nb=batch_size)
         self.pvm = PVM(self.env.episode_length, self.env._stock_dim)
 
         # dataset and dataloader
@@ -175,6 +179,28 @@ class PG:
             batch_size=batch_size,
             shuffle=False,
             pin_memory=True)
+        
+        self.max_profolio_value = None
+        self.max_count = 0
+        
+    def stop_train(self, profolio_value):
+        """
+            用來判斷績效是否停滯
+        """
+        if self.max_profolio_value is None:
+            self.max_profolio_value = profolio_value
+        else:
+            if profolio_value > self.max_profolio_value:
+                self.max_profolio_value = profolio_value
+                self.max_count = 0 #重新歸零
+            else:
+                self.max_count +=1
+
+        print("距離新高點幾次:",self.max_count,"最高金額:",self.max_profolio_value)
+
+        if self.max_count >20:
+            return True
+        return False
 
     def train(self, episodes=100):
         """Training sequence
@@ -182,23 +208,26 @@ class PG:
         Args:
             episodes: Number of episodes to simulate
         """
-        
+
         step_counter = 0  # 步驟計數器
         for i in tqdm(range(1, episodes + 1)):
             obs = self.env.reset()  # observation
             self.pvm.reset()  # reset portfolio vector memory
             done = False
-            
+
             while not done:
                 # define last_action and action and update portfolio vector memory
                 last_action = self.pvm.retrieve()
-                obs_batch = np.expand_dims(obs, axis=0)# (1, 3, 4, 50) # batch_szie,futrue_size,category_of_market,window
+                # (1, 3, 4, 50) # batch_szie,futrue_size,category_of_market,window
+                obs_batch = np.expand_dims(obs, axis=0)
                 last_action_batch = np.expand_dims(last_action, axis=0)
-                action = self.policy(obs_batch, last_action_batch)# 這裡的last_action_batch 是 wt-1
+                # 這裡的last_action_batch 是 wt-1
+                action = self.policy(obs_batch, last_action_batch)
                 self.pvm.add(action)
 
                 # run simulation step
-                next_obs, reward, done, info = self.env.step(action)# 這裡的last_action_batch 是 wt
+                next_obs, reward, done, info = self.env.step(
+                    action)  # 這裡的last_action_batch 是 wt
 
                 # add experience to replay buffer
                 exp = (obs, last_action,
@@ -208,7 +237,7 @@ class PG:
                 # # update policy networks
                 # if len(self.buffer) > self.batch_size:
                 #     self._gradient_ascent()
-                
+
                 step_counter += 1
                 # update policy networks periodically
                 if step_counter % self.batch_size == 0:
@@ -216,10 +245,11 @@ class PG:
 
                 obs = next_obs
 
+            if self.stop_train(self.env._portfolio_value):
+                break
+
             # gradient ascent with episode remaining buffer data
             self._gradient_ascent()
-
-            
 
     def _gradient_ascent(self):
         # update target neural network
@@ -231,9 +261,6 @@ class PG:
         obs = obs.to(self.policy.device)
         last_actions = last_actions.to(self.policy.device)
         price_variations = price_variations.to(self.policy.device)
-
-        print(price_variations)
-        time.sleep(100)
         trf_mu = trf_mu.unsqueeze(1).to(self.policy.device)
 
         # define policy loss (negative for gradient ascent)
@@ -241,7 +268,7 @@ class PG:
         policy_loss = - \
             torch.mean(
                 torch.log(torch.sum(mu * price_variations * trf_mu, dim=1)))
-        
+
         # update policy network
         self.policy.zero_grad()
         policy_loss.backward()

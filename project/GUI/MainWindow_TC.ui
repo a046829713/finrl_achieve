@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1233</width>
+    <height>664</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Crypto Trading Systeam</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Triangular</enum>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>20</y>
+      <width>761</width>
+      <height>531</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="tabShape">
+     <enum>QTabWidget::Triangular</enum>
+    </property>
+    <property name="currentIndex">
+     <number>1</number>
+    </property>
+    <widget class="QWidget" name="CloseProfit_tab">
+     <attribute name="title">
+      <string>CloseProfit</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab">
+     <attribute name="title">
+      <string>Tab 2</string>
+     </attribute>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>40</y>
+      <width>341</width>
+      <height>511</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout" stretch="2,1">
+     <item>
+      <widget class="QTableWidget" name="tableWidget"/>
+     </item>
+     <item>
+      <widget class="QTextEdit" name="trade_info"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1233</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionimport"/>
+    <addaction name="actionexport"/>
+    <addaction name="separator"/>
+    <addaction name="actionAutoTrading"/>
+    <addaction name="actionSaveData"/>
+    <addaction name="separator"/>
+    <addaction name="actionReload_Day_Data"/>
+    <addaction name="actionReload_Min_Data"/>
+    <addaction name="actionExport_all_tables"/>
+    <addaction name="actionImport_all_talbes"/>
+   </widget>
+   <widget class="QMenu" name="menuData">
+    <property name="title">
+     <string>Data</string>
+    </property>
+    <addaction name="actionImportavgloss"/>
+    <addaction name="actionExportavgloss"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuData"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionAutoTrading"/>
+   <addaction name="actionSaveData"/>
+   <addaction name="separator"/>
+   <addaction name="actionimport"/>
+   <addaction name="actionexport"/>
+   <addaction name="separator"/>
+   <addaction name="actionExport_all_tables"/>
+   <addaction name="actionImport_all_talbes"/>
+   <addaction name="actionReload_Day_Data"/>
+   <addaction name="actionReload_Min_Data"/>
+   <addaction name="separator"/>
+   <addaction name="actionExportavgloss"/>
+   <addaction name="actionImportavgloss"/>
+  </widget>
+  <action name="actionimport">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/ImportData.png</normaloff>Images/ImportData.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import Optimize Result</string>
+   </property>
+  </action>
+  <action name="actionexport">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/CsvExport.png</normaloff>Images/CsvExport.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export Optimize Result</string>
+   </property>
+  </action>
+  <action name="actionAutoTrading">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/Gear.png</normaloff>Images/Gear.png</iconset>
+   </property>
+   <property name="text">
+    <string>AutoTrading</string>
+   </property>
+  </action>
+  <action name="actionSaveData">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/SaveData.png</normaloff>Images/SaveData.png</iconset>
+   </property>
+   <property name="text">
+    <string>SaveData</string>
+   </property>
+  </action>
+  <action name="actionReload_Day_Data">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/DayData.png</normaloff>Images/DayData.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reload Day Data</string>
+   </property>
+  </action>
+  <action name="actionReload_Min_Data">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/MinData.png</normaloff>Images/MinData.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reload Min Data</string>
+   </property>
+  </action>
+  <action name="actionExport_all_tables">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/exporthistory.png</normaloff>Images/exporthistory.png</iconset>
+   </property>
+   <property name="text">
+    <string>export all tables</string>
+   </property>
+  </action>
+  <action name="actionImport_all_talbes">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/importhistory.png</normaloff>Images/importhistory.png</iconset>
+   </property>
+   <property name="text">
+    <string>import all talbes</string>
+   </property>
+  </action>
+  <action name="actionExportavgloss">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/export.png</normaloff>Images/export.png</iconset>
+   </property>
+   <property name="text">
+    <string>exportavgloss</string>
+   </property>
+  </action>
+  <action name="actionImportavgloss">
+   <property name="icon">
+    <iconset>
+     <normaloff>Images/import.png</normaloff>Images/import.png</iconset>
+   </property>
+   <property name="text">
+    <string>importavgloss</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
+ <connections/>
+</ui>

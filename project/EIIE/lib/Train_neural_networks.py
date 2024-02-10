@@ -43,5 +43,9 @@ def train(Train_data_path: str, Meta_path: str, episodes: int, save: bool, pre_t
         algo.policy.load_state_dict(torch.load(Meta_path))
     
     algo.train(episodes=episodes)
+    
     if save:
-        torch.save(algo.target_policy.state_dict(), Meta_path)
+        if Meta_path:
+            torch.save(algo.target_policy.state_dict(), Meta_path)
+        else:
+            torch.save(algo.target_policy.state_dict(), 'policy_EIIE.pt')

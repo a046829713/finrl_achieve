@@ -3,6 +3,7 @@ from Major.Date_time import parser_time
 import numpy as np
 from Count.Base import Pandas_count
 from decimal import Decimal
+import time
 
 class Datatransformer:
     def get_tradedata(self, original_df: pd.DataFrame, freq: int = 30):
@@ -58,7 +59,7 @@ class Datatransformer:
 
         Args:
             last_status (_type_): {'09XXXXXXXX': {'BTCUSDT-15K-OB-DQN': [1, 0.6278047845752174], 'ETHUSDT-15K-OB-DQN': [1, 20.967342756868344]}}
-            current_size (_type_): {'0975730876': {'BNBUSDT': '115.84', 'XMRUSDT': '67.019',
+            current_size (_type_): {'09XXXXXXXX': {'BNBUSDT': '115.84', 'XMRUSDT': '67.019',
             'DASHUSDT': '341.320', 'FOOTBALLUSDT': '22.15', 'LTCUSDT': '103.450', 'KSMUSDT': '175.1',
             'TRBUSDT': '544.7', 'ZECUSDT': '227.060', 'QNTUSDT': '541.7', 'SOLUSDT': '365', 'GMXUSDT': '141.84', 'YFIUSDT': '0.520', 'ETHUSDT': '19.039', 'EGLDUSDT': '106.3', 'BCHUSDT': '71.770', 'AAVEUSDT': '96.0', 'MKRUSDT': '11.789', 'DEFIUSDT': '4.080', 'COMPUSDT': '51.079', 'BTCDOMUSDT': '19.410', 'BTCUSDT': '0.570'}}
             symbol_map (_type_): _description_
@@ -92,7 +93,6 @@ class Datatransformer:
             當計算出來的結果 + 就是要買 - 就是要賣
 
         """
-
         combin_dict = {}
         for name_key, status in systeam_size.items():
             combin_symobl = name_key.split('-')[0]
@@ -126,55 +126,6 @@ class Datatransformer:
                 diff_map.update({symbol_name: - float(postition_size)})
 
         return diff_map
-
-    def mergeData(self, symbol_name: str, lastdata: pd.DataFrame, socketdata: dict):
-        """合併資料用來
-
-        Args:
-            symbol_name (str) : "BTCUSDT" 
-            lastdata (pd.DataFrame): 存在Trading_systeam裡面的更新資料
-            socketdata (dict): 存在AsyncDataProvider裡面的即時資料
-
-            [1678000140000, '46.77', '46.77', '46.76', '46.76', '6.597', 1678000199999, '308.51848', 9, '0.000', '0.00000', '0']]
-        """
-        # 先將catch 裡面的資料做轉換 # 由於當次分鐘量不會很大 所以決定不清空 考慮到異步問題
-
-        if socketdata.get(symbol_name, None) is not None:
-            if socketdata[symbol_name]:
-                df = pd.DataFrame.from_dict(
-                    socketdata[symbol_name], orient='index')
-                df.reset_index(drop=True, inplace=True)
-                df['Datetime'] = pd.to_datetime(df['Datetime'])
-            else:
-                df = pd.DataFrame()
-        else:
-            df = pd.DataFrame()
-
-        # lastdata
-        lastdata.reset_index(inplace=True)
-        new_df = pd.concat([lastdata, df])
-
-        new_df.set_index('Datetime', inplace=True)
-        # duplicated >> 重複 True 代表重複了 # 過濾相同資料
-        new_df = new_df[~new_df.index.duplicated(keep='last')]
-        new_df = new_df.astype(float)
-
-        return new_df, df
-
-    def target_symobl_merge(self, market_symobl: list, binance_catch: list):
-        """
-            用來將所有商品合併在一起,當市場狀況很差的時候,只監控比特幣
-        Args:
-            market_symobl (list): 取得目前要輪動交易的標的
-            binance_catch (list): Binance 目前擁有部位的商品 (有部位的要繼續追蹤)
-        """
-
-        market_symobl.extend(binance_catch)
-
-        if market_symobl:
-            return list(set(market_symobl))
-        else:
-            return ['BTCUSDT']
 
     def trans_int16(self, data: dict):
         """
@@ -238,7 +189,7 @@ class Datatransformer:
         sort_example = sorted(out_list, key=lambda x: x[1], reverse=True)
         return sort_example
 
-    def get_volume_top_filter_symobl(self, all_symbols):
+    def get_volume_top_filter_symobl(self, all_symbols, max_symbols: int):
         """
             取得30內成交金額最高的前幾名
         Args:
@@ -261,8 +212,8 @@ class Datatransformer:
 
         sorted_compare_dict = sorted(
             compare_dict, key=compare_dict.get, reverse=True)
-        
-        return [symbolname.split('-')[0].upper() for symbolname in sorted_compare_dict]
+
+        return [symbolname.split('-')[0].upper() for symbolname in sorted_compare_dict[:max_symbols]]
 
     def change_min_postion(self, all_order_finally: dict, MinimumQuantity: dict):
         out_dict = {}
@@ -315,3 +266,55 @@ class Datatransformer:
                         {symbol_info['symbol']: float(filter['notional'])*2})
 
         return out_dict
+
+    def fix_data_different_len_and_na(self, df: pd.DataFrame):
+        # 找出最長的歷史數據長度
+        max_length = df.groupby('tic').count().max()
+
+        # 取得所有時間
+        all_times = set(df['date'])
+
+        new_df = pd.DataFrame()
+        # 對每個 tic 進行處理
+        for tic in df['tic'].unique():
+            # 找出當前 tic 的數據
+            tic_data = df[df['tic'] == tic]
+
+            # 取得當下資料的行數
+            diff_times = all_times - set(tic_data['date'])
+            dif_len = len(diff_times)
+
+            # 如果需要填充
+            if dif_len > 0:
+                fill_data = pd.DataFrame({
+                    'date': list(diff_times),
+                    'tic': tic,
+                    'open': np.nan,
+                    'high': np.nan,
+                    'low': np.nan,
+                    'close': np.nan,
+                    'volume': np.nan,
+                })
+                # 將填充用的 Series 添加到原始 DataFrame
+                tic_data = pd.concat([tic_data, fill_data])
+
+            # 補上虛擬資料
+            tic_data = tic_data.sort_values(by=['tic', 'date'])
+            tic_data = tic_data.ffill(axis=0)
+            tic_data = tic_data.bfill(axis=0)
+
+            new_df = pd.concat([new_df, tic_data])
+
+        # 重新排序
+        new_df = new_df.sort_values(by=['tic', 'date'])
+        return new_df
+
+
+    def filter_last_time_series(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+            移除每個組最後一條記錄
+        """
+        def _remove_last(group):
+            return group.iloc[:-1]
+        
+        return df.groupby('tic').apply(_remove_last).reset_index(drop=True)

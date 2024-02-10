@@ -111,10 +111,11 @@ class DatabaseBackupRestore:
         getAllTablesName = self.SQL.get_db_data('show tables;')
         getAllTablesName = [y[0] for y in getAllTablesName]
         for table in getAllTablesName:
-            print(table)
-            df = self.SQL.read_Dateframe(table)
-            path = os.path.join(f"{self.backup_folder}", f"{table}.csv")
-            df.to_csv(path, index=False)
+            if 'user' in table:
+                print(table)
+            # df = self.SQL.read_Dateframe(table)
+            # path = os.path.join(f"{self.backup_folder}", f"{table}.csv")
+            # df.to_csv(path, index=False)
     
     def export_table_data(self, table_name: str):
         """

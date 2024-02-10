@@ -35,10 +35,10 @@ def example_reload_all_data():
 
 def example_Train_neural_networks():
     Train_neural_networks.train(Train_data_path='EIIE/simulation/train_data.csv',
-                                Meta_path="EIIE\Meta\policy_EIIE.pt",
-                                episodes=500,
+                                Meta_path="EIIE\Train\policy_EIIE.pt", #EIIE\Meta\policy_EIIE.pt
+                                episodes=200,
                                 save=True,
-                                pre_train=True)
+                                pre_train=True) # True
 
 
 def example_simple_evaluate(): 

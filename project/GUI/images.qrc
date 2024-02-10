@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="images">
+    <file>Images/Attention.png</file>
+    <file>Images/Gear.png</file>
+    <file>Images/binance.png</file>
+  </qresource>
+</RCC>

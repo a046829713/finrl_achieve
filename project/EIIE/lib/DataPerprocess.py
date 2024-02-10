@@ -1,23 +1,21 @@
-# 用來轉換成 類神經網絡可以使用的資料特徵
+
 import pandas as pd
-import collections
 import numpy as np
 from typing import Optional
 
-PricesObject = collections.namedtuple(
-    'Prices', field_names=['open', 'high', 'low', 'close', 'volume'])
 
 
-class DataFeature():
+
+class DataPerprocess():
     """
-        用來產生資料特徵,不過實際產生game狀態的在 environ裡面
+        用來轉換成 類神經網絡可以使用的資料
+        檢查確認，清洗轉換
     """
 
-    def __init__(self, formal: bool = False) -> None:
-        # 目前設計是訓練模式才會使用到                            
+    def __init__(self) -> None:
+        pass                            
 
-        self.targetsymbols = [ 'BTCUSDT']
-        self.formal = formal
+       
 
     def load_relative(self):
         array_data = self.df.values

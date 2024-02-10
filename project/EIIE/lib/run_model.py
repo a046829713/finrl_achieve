@@ -1,15 +1,7 @@
-#!/usr/bin/env python3
 import numpy as np
-from DQN.lib.DataFeature import DataFeature
 import torch
-from DQN.lib import environ, models, Backtest
 import re
-from utils.AppSetting import AppSetting
-from .common import Strategy_base_DQN
-import time
 import os
-# 尚未驗算實際下單部位
-
 
 class Record_Orders():
     def __init__(self, strategy: Strategy_base_DQN, formal: bool = False) -> None:
@@ -90,8 +82,7 @@ class Record_Orders():
 
         return marketpostion
 
-    def getpf(self):
-        
+    def getpf(self):        
         return Backtest.Backtest(
             self.strategy.df, self.BARS, self.strategy).order_becktest(self.record_orders)
 
