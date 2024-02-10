@@ -46,4 +46,4 @@ def example_simple_evaluate():
                                     Test_data_path=r'EIIE\simulation\test_data.csv',
                                     Meta_path=r'EIIE\Meta\policy_EIIE.pt')
 
-example_Train_neural_networks()
+example_reload_all_data()
