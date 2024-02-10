@@ -10,7 +10,9 @@ import torch
 class EngineBase():
     def __init__(self, Meta_path: str) -> None:
         self.policy = GradientPolicy()
-        self.policy.load_state_dict(torch.load(Meta_path))
+        self.policy.load_state_dict(torch.load(Meta_path, map_location= self.policy.device))
+
+
         self.policy = self.policy.to(self.policy.device)
         self.EIIE_results = {}
 
