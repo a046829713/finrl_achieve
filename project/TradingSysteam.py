@@ -247,7 +247,7 @@ class AsyncTrading_system(Trading_system):
                     # 取得所有戶頭的平衡資金才有辦法去運算口數
                     balance_balance_map = self.check_money_level()
                     last_status = self.engine.get_order(
-                        finally_df, balance_balance_map, leverage=1)
+                        finally_df, balance_balance_map, leverage=self.engine_setting['LEVERAGE'])
 
                     self.printfunc('目前交易狀態,校正之後', last_status)
 
