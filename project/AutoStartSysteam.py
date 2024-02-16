@@ -28,5 +28,10 @@ def main(exe_file_name: str, python_env_path: str):
         time.sleep(30)
 
 if __name__ =="__main__":
+    # windows
+    # main(exe_file_name='TradingSysteam.py',
+    #     python_env_path=r'C:\Users\user\Desktop\program\Reinforcement_learninng\Scripts\python.exe')
+    
+    # 調整python虛擬環境的路徑為Linux格式，並指定正確的python可執行文件路徑
     main(exe_file_name='TradingSysteam.py',
-        python_env_path=r'C:\Users\user\Desktop\program\Reinforcement_learninng\Scripts\python.exe')
+         python_env_path='/home/a046829713/RL_Trading/venv/bin/python')
