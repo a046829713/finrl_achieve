@@ -168,12 +168,6 @@ class AsyncTrading_system(Trading_system):
         # 將標得注入引擎
         self.asyncDataProvider = AsyncDataProvider()
 
-    def register_portfolio(self):
-        # 初始化投資組合 (傳入要買的標的物, 並且讀取神經網絡的參數)
-        self.engine.Portfolio_register(
-            self.targetsymbols, self._get_avgloss())  # 傳入平均虧損的資料
-        self.symbol_name: set = self.engine.get_symbol_name()
-
     def process_target_symbol(self):
         """
             Retrieve the latest targets from the market every 5 days.
@@ -189,6 +183,8 @@ class AsyncTrading_system(Trading_system):
             # 第一次運行,要reset
             if not old_symbol:
                 self.targetsymbols = self.get_target_symbol()
+            else:
+                self.targetsymbols = old_symbol
 
 
     def check_money_level(self):
@@ -300,7 +296,7 @@ def safe_run(target, *args, **kwargs):
         target(*args, **kwargs)
     except Exception as e:
         import os
-        print(f"Error in thread {target.__name__}: {e}")
+        print(f"安全錯誤線程 : {target.__name__}: {e}")
         exit_event.set() # 透過事件設置就可以讓所有的thread關閉
         
 
