@@ -28,8 +28,12 @@ def example_get_target_symbol():
 
 
 
-def example_reload_all_data():
-    DataProvider().reload_all_data(time_type='1m',symbol_type ='FUTURES')
+def example_reload_all_data(time_type:str):
+    """
+    Args:
+        time_type (str): '1m','1d'
+    """
+    DataProvider().reload_all_data(time_type='1d',symbol_type ='FUTURES')
         
 
 
@@ -46,4 +50,4 @@ def example_simple_evaluate():
                                     Test_data_path=r'EIIE\simulation\test_data.csv',
                                     Meta_path=r'EIIE\Meta\policy_EIIE.pt')
 
-example_reload_all_data()
+example_reload_all_data(time_type = '1d')
