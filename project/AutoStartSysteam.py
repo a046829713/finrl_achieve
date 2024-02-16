@@ -34,4 +34,4 @@ if __name__ =="__main__":
     
     # 調整python虛擬環境的路徑為Linux格式，並指定正確的python可執行文件路徑
     main(exe_file_name='TradingSysteam.py',
-         python_env_path='/home/a046829713/RL_Trading/venv/bin/python')
+         python_env_path='/home/a046829713/RL_Trading/bin/python')
