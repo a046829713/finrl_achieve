@@ -6,11 +6,10 @@ class AppSetting():
     def systeam_setting():
         permission_data ={
             'execute_orders': True,
-            'emergency_times':20
+            'emergency_times':50
         }   
         return permission_data
          
-
     @staticmethod
     def engine_setting():
         data = {
@@ -20,23 +19,6 @@ class AppSetting():
 
         return data
     
-    
-    
-    # @staticmethod
-    # def get_UserDeadline():
-    #     data = {
-    #         "48d326d82ea14efc6710e4043722c204ee230b001f0524d1f7b3f37091542136": "2025-12-31",
-    #         "094cb2eaec7a7eb0eb8f7dce3a5e1d082af20e9424ac70413ff79fc47d9dcecb": "2023-12-10"  # UTTER
-    #     }
-
-    #     return data
-
-    # @staticmethod
-    # def get_version() -> str:
-    #     return '2023-07-02'
-
-
-
     # @staticmethod
     # def get_DQN_setting() -> str:
     #     setting_data = {

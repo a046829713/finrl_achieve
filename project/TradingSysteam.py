@@ -12,7 +12,6 @@ from utils import Debug_tool, Data_parser
 from utils.Debug_tool import ExcessiveTradeException
 from binance.exceptions import BinanceAPIException
 from EIIE.lib.engine import EngineBase
-from EIIE.lib.DataPerprocess import DataPerprocess
 import asyncio
 import os
 

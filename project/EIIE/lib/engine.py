@@ -10,13 +10,11 @@ import torch
 class EngineBase():
     def __init__(self, Meta_path: str) -> None:
         self.policy = GradientPolicy()
-        self.policy.load_state_dict(torch.load(Meta_path, map_location= self.policy.device))
-
-
+        self.policy.load_state_dict(torch.load(
+            Meta_path, map_location=self.policy.device))
         self.policy = self.policy.to(self.policy.device)
-        self.EIIE_results = {}
 
-    def work(self,df:pd.DataFrame):
+    def work(self, df: pd.DataFrame):
         environment = PortfolioOptimizationEnv(
             df,
             initial_amount=50000,
@@ -24,7 +22,7 @@ class EngineBase():
             time_window=50,
             features=["close", "high", "low"]
         )
-        
+
         self.last_order_info = self._performance(environment=environment)
 
     def _performance(self, environment: PortfolioOptimizationEnv):
@@ -45,14 +43,13 @@ class EngineBase():
             action = self.policy(obs_batch, last_action_batch)
             pvm.add(action)
             obs, _, done, _ = environment.step(action)
-        
+
         allsymbols = ['Cash_asset']
-        allsymbols.extend( environment._tic_list)
+        allsymbols.extend(environment._tic_list)
 
-        return list(zip(allsymbols,list(environment._actions_memory[-1])))
-    
+        return list(zip(allsymbols, list(environment._actions_memory[-1])))
 
-    def get_order(self, finally_df:pd.DataFrame ,balance_balance_map:dict, leverage:float):
+    def get_order(self, finally_df: pd.DataFrame, balance_balance_map: dict, leverage: float):
         """
             last_order_info:[('Cash_asset', 7.812179e-05), ('BTCUSDT', 0.5025471), ('ETHUSDT', 0.4973748)]
         Args:
@@ -63,17 +60,18 @@ class EngineBase():
         Return:
             {'09XXXXXXXX': {'BTCUSDT-15K-OB-DQN': [1, 0.6278047845752174],
               'ETHUSDT-15K-OB-DQN': [1, 20.967342756868344]}}
-        """     
+        """
         last_df = finally_df.groupby('tic').last()
-        out_map = {}        
+        out_map = {}
         for key, value in balance_balance_map.items():
             for each_data in self.last_order_info[1:]:
                 symbol = each_data[0]
                 weight = each_data[1]
-                shares = value * weight * leverage  /  last_df[last_df.index == symbol]['close'].iloc[0]
+                shares = value * weight * leverage / \
+                    last_df[last_df.index == symbol]['close'].iloc[0]
                 if key in out_map:
-                    out_map[key].update({symbol:[1,shares]})
-                else:                    
-                    out_map[key] = {symbol:[1,shares]}
+                    out_map[key].update({symbol: [1, shares]})
+                else:
+                    out_map[key] = {symbol: [1, shares]}
 
         return out_map
