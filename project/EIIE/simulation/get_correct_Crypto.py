@@ -49,7 +49,7 @@ def generate_data(begin_time, end_time,tag:str = None):
     new_df = pd.DataFrame()
 
     # ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'AVAXUSDT', 'TRBUSDT', 'BNBUSDT', 'ETCUSDT', 'INJUSDT', 'LTCUSDT', 'BCHUSDT', 'MKRUSDT']
-    for each_symbol in ['BTCUSDT', 'BNBUSDT', 'ETCUSDT', 'BCHUSDT', 'MKRUSDT']:
+    for each_symbol in ['INJUSDT','BNBUSDT','ETCUSDT','LTCUSDT','TRBUSDT',"ENSUSDT","SOLUSDT",'ETHUSDT','BCHUSDT',"AVAXUSDT","BTCUSDT"]:
         df = pd.read_csv(f'EIIE\simulation\data\{each_symbol}-F-30-Min.csv')
         df['tic'] = each_symbol
         df.rename(columns={"Datetime": 'date',
@@ -66,10 +66,10 @@ def generate_data(begin_time, end_time,tag:str = None):
     new_df = fix_data_different_len_and_na(new_df)
 
     if tag == 'train':
-        new_df.to_csv(r'EIIE\simulation\train_data.csv')
+        new_df.to_csv(f'EIIE\simulation\{begin_time}-{end_time}-train_data.csv')
     elif tag == 'test':
         new_df.to_csv(r'EIIE\simulation\test_data.csv')
 
 
 if __name__ == '__main__':
-    generate_data(begin_time='2022-01-01', end_time='2022-02-30',tag='test')
+    generate_data(begin_time='2023-09-01', end_time='2024-02-20',tag='train')

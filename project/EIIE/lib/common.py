@@ -202,7 +202,7 @@ class PG:
             return True
         return False
 
-    def train(self, episodes=100):
+    def train(self, episodes):
         """Training sequence
 
         Args:
@@ -241,13 +241,14 @@ class PG:
                 step_counter += 1
                 # update policy networks periodically
                 if step_counter % self.batch_size == 0:
+                    print("目前交易次數:",step_counter)
                     self._gradient_ascent()
 
                 obs = next_obs
 
             if self.stop_train(self.env._portfolio_value):
                 break
-
+            
             # gradient ascent with episode remaining buffer data
             self._gradient_ascent()
 

@@ -11,7 +11,7 @@ def example_get_symboldata():
             this function is for download history data to experiment.
             
     """
-    symbols =['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'AVAXUSDT', 'TRBUSDT', 'BNBUSDT', 'ETCUSDT', 'INJUSDT', 'LTCUSDT', 'BCHUSDT', 'MKRUSDT']
+    symbols =['INJUSDT','BNBUSDT','ETCUSDT','LTCUSDT','TRBUSDT',"ENSUSDT","SOLUSDT",'ETHUSDT','BCHUSDT',"AVAXUSDT","BTCUSDT"]
     for _each_symbol_name in symbols:
         DataProvider().Downloader(symbol_name=_each_symbol_name,save=True, freq=30)
 
@@ -39,10 +39,12 @@ def example_reload_all_data(time_type:str):
 
 def example_Train_neural_networks():
     Train_neural_networks.train(Train_data_path='EIIE/simulation/train_data.csv',
-                                Meta_path="EIIE\Train\policy_EIIE.pt", #EIIE\Meta\policy_EIIE.pt
-                                episodes=200,
+                                Meta_path="EIIE\Meta\policy_EIIE.pt",
+                                Train_path="EIIE\Train\policy_EIIE.pt",
+                                episodes=100000,
                                 save=True,
-                                pre_train=True) # True
+                                pre_train=False,
+                                ) # True
 
 
 def example_simple_evaluate(): 
@@ -50,4 +52,4 @@ def example_simple_evaluate():
                                     Test_data_path=r'EIIE\simulation\test_data.csv',
                                     Meta_path=r'EIIE\Meta\policy_EIIE.pt')
 
-example_reload_all_data(time_type = '1d')
+example_Train_neural_networks()

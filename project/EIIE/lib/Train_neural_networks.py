@@ -26,7 +26,7 @@ logging.getLogger('matplotlib.font_manager').disabled = True
 """
 
 
-def train(Train_data_path: str, Meta_path: str, episodes: int, save: bool, pre_train: bool):
+def train(Train_data_path: str, Meta_path: str, Train_path: str, episodes: int, save: bool, pre_train: bool):
     portfolio_raw_df = pd.read_csv(Train_data_path)
     portfolio_raw_df.drop(columns=['Unnamed: 0'], inplace=True)
     df_portfolio = portfolio_raw_df[["date", "tic", "close", "high", "low"]]
@@ -45,7 +45,4 @@ def train(Train_data_path: str, Meta_path: str, episodes: int, save: bool, pre_t
     algo.train(episodes=episodes)
     
     if save:
-        if Meta_path:
-            torch.save(algo.target_policy.state_dict(), Meta_path)
-        else:
-            torch.save(algo.target_policy.state_dict(), 'policy_EIIE.pt')
+        torch.save(algo.target_policy.state_dict(), Train_path)

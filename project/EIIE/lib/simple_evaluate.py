@@ -7,7 +7,8 @@ import numpy as np
 from EIIE.lib.model import GradientPolicy
 import torch
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
+matplotlib.use('tkagg')
 
 
 def update_test_model_performance(environment: PortfolioOptimizationEnv, Tag, results: dict, Meta_path:str):
@@ -71,6 +72,9 @@ def plot_performance(UBAH_results, EIIE_results, period, title):
         :param period: 要绘制的时间段（例如 "train", "test"）。
         :param title: 图表的标题。
     """
+    print(UBAH_results[period]["value"])
+    print('*'*120)
+    print(EIIE_results[period]["value"])
     plt.plot(UBAH_results[period]["value"], label="Buy and Hold")
     plt.plot(EIIE_results[period]["value"], label="EIIE")
     plt.xlabel("Days")
@@ -131,5 +135,6 @@ def evaluate_train_test_performance(Train_data_path: str, Test_data_path: str, M
     # 使用示例
     plot_performance(UBAH_results, EIIE_results, "train",
                      "Performance in train period")
+    
     plot_performance(UBAH_results, EIIE_results, "test",
                      "Performance in test period")
