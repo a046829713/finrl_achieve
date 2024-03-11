@@ -56,7 +56,6 @@ class EngineBase():
             balance_balance_map (dict): 
                 {'09XXXXXXXX': 0.0,'09XXXXXXXX': 0.0, '09XXXXXXXX': 7916.93242276}
 
-
         Return:
             {'09XXXXXXXX': {'BTCUSDT-15K-OB-DQN': [1, 0.6278047845752174],
               'ETHUSDT-15K-OB-DQN': [1, 20.967342756868344]}}

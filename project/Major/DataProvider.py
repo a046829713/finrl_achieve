@@ -153,7 +153,7 @@ class DataProvider:
             else:
                 ValueError("系統尚未配置請確認後再次執行")
 
-    def get_symboldata(self, symbol_name, freq: int = 15, QMType: str = None):
+    def get_symboldata(self, symbol_name, QMType: str = None):
         """
             非即時交易的時候用來產生回測資料
             並且保存至本地端點
@@ -172,9 +172,10 @@ class DataProvider:
 
             return original_df, eachCatchDf
 
-    def get_trade_data(self, targetsymbols, symbol_map, freq):
+    def get_trade_data(self, targetsymbols, symbol_map, freq, trade_targets:list):
         finally_df = pd.DataFrame()
         for symbol_name in targetsymbols:
+            if symbol_name not in trade_targets:continue # 資金分配模組要以DQN為主，不能讓舊有的商品進來分配資金
             # 取得可交易之資料
             each_df = self.datatransformer.get_tradedata(
                 symbol_map[symbol_name], freq=freq)

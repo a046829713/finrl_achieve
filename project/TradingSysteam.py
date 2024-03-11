@@ -12,22 +12,32 @@ from utils import Debug_tool, Data_parser
 from utils.Debug_tool import ExcessiveTradeException
 from binance.exceptions import BinanceAPIException
 from EIIE.lib.engine import EngineBase
+from DQN.lib.engine import EngineBase as DQN_EngineBase
 import asyncio
 import os
+
 
 class Trading_system():
     def __init__(self) -> None:
         DatabasePreparator()  # 系統初始化等檢查
         self.dataprovider = DataProvider()  # 創建資料庫的連線
-        self.engine = self.buildEngine()  # 建立引擎
+        self.buildEngine()  # 建立引擎
         self.systeam_setting = AppSetting.systeam_setting()
         self.GuiStartDay = str(datetime.date.today())
         self.datatransformer = Data_parser.Datatransformer()
         self.symbol_map = {}
         # 這次新產生的資料
         self.new_symbol_map = {}
-
         self.engine_setting = AppSetting.engine_setting()
+
+    def buildEngine(self) -> None:
+        """ 
+        用來創建回測系統，並且將DQN判斷是否送出訂單
+
+        """
+        meta_path = os.path.join('EIIE', 'Meta', 'policy_EIIE.pt')
+        self.engine = EngineBase(Meta_path=meta_path)
+        self.DQN_engin = DQN_EngineBase()
 
     def DailyChange(self):
         """
@@ -95,15 +105,6 @@ class Trading_system():
 
         return self.dataprovider.filter_useful_symbol(all_symbols, tag="VOLUME_TYPE")
 
-    def buildEngine(self):
-        """ 用來創建回測系統
-
-        Returns:
-            _type_: _description_
-        """
-        meta_path = os.path.join('EIIE', 'Meta', 'policy_EIIE.pt')
-        return EngineBase(Meta_path=meta_path)
-
     def reload_all_futures_data(self):
         """
             用來回補所有日線期貨資料
@@ -116,14 +117,12 @@ class Trading_system():
             將資料全部從Mysql寫出
         """
         DatabaseBackupRestore().export_all_tables()
-    
 
-    def export_table_data(self,table_name:str):
+    def export_table_data(self, table_name: str):
         """
             單一資料
         """
         DatabaseBackupRestore().export_table_data(table_name)
-        
 
     def printfunc(self, *args):
         out_str = ''
@@ -169,22 +168,11 @@ class AsyncTrading_system(Trading_system):
 
     def process_target_symbol(self):
         """
-            Retrieve the latest targets from the market every 5 days.
+           商品改成非動態的，因為會變成指定的
         """
         old_symbol = self.dataprovider.Binanceapp.getfutures_account_name()  # 第一次運行會是空的
-        diff_time = datetime.datetime.today() - self.dataprovider.last_profolio_adjust_time()
-        if diff_time.days > 5:
-            # 取得新的標的
-            self.targetsymbols = self.get_target_symbol()
-            self.dataprovider.SQL.change_db_data(
-                f"""UPDATE interval_record SET lastportfolioadjustmenttime = '{datetime.datetime.now()}'WHERE id = '1';""")
-        else:
-            # 第一次運行,要reset
-            if not old_symbol:
-                self.targetsymbols = self.get_target_symbol()
-            else:
-                self.targetsymbols = old_symbol
-
+        # 合併舊的商品 因為這樣更新的商品的時候可以把庫存清掉
+        self.targetsymbols = list(set(old_symbol + self.DQN_engin.symbols))
 
     def check_money_level(self):
         """
@@ -194,9 +182,24 @@ class AsyncTrading_system(Trading_system):
 
             # 每天平衡一次所以 要製作一個5%的平衡機制
         """
-
         # 這邊取得的是幣安的保證金(以平倉損益) # 取得所有戶頭的資金
         return self.dataprovider.Binanceapp.get_alluser_futuresaccountbalance()
+
+    def _filter_if_not_trade(self, last_status, if_order_map):
+        """
+        Args:
+            last_status (_type_): {'0975730876': {'BNBUSDT': [1, 22.136232357786525],'BTCUSDT': [1, 0.16601471242314805], 'ETHUSDT': [1, 2.9745855751452743]}}
+            if_order_map (_type_): {'BTCUSDT': 1.0, 'ETHUSDT': 0.0, 'BNBUSDT': 1.0}
+
+        """
+        new_last_status = copy.deepcopy(last_status)
+        for key, order_data in last_status.items():
+            for symbol in (order_data.keys()):
+                _result = if_order_map.get(symbol, None)
+                if _result == 0:
+                    new_last_status[key].pop(symbol)
+
+        return new_last_status
 
     async def main(self):
         self.printfunc("Crypto_trading 正式交易啟動")
@@ -232,17 +235,23 @@ class AsyncTrading_system(Trading_system):
                     self.printfunc("開始進入回測")
                     # 準備將資料塞入神經網絡或是策略裡面
                     finally_df = self.dataprovider.get_trade_data(
-                        self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'])
+                        self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'],trade_targets = self.DQN_engin.symbols)
 
+                    if_order_map = self.DQN_engin.get_if_order_map(finally_df)
+                    
                     finally_df = self.dataprovider.datatransformer.filter_last_time_series(
                         finally_df)
-                    
+
                     self.engine.work(finally_df)
 
                     # 取得所有戶頭的平衡資金才有辦法去運算口數
                     balance_balance_map = self.check_money_level()
+
                     last_status = self.engine.get_order(
                         finally_df, balance_balance_map, leverage=self.engine_setting['LEVERAGE'])
+
+                    last_status = self._filter_if_not_trade(
+                        last_status, if_order_map)
 
                     self.printfunc('目前交易狀態,校正之後', last_status)
 
@@ -255,6 +264,7 @@ class AsyncTrading_system(Trading_system):
                         last_status, current_size, self.symbol_map, exchange_info=self.dataprovider.Binanceapp.getfuturesinfo())
 
                     print("測試all_order_finally", all_order_finally)
+
                     # 將order_finally 跟下單最小單位相比
                     all_order_finally = self.dataprovider.datatransformer.change_min_postion(
                         all_order_finally, self.dataprovider.Binanceapp.getMinimumOrderQuantity())
@@ -296,8 +306,8 @@ def safe_run(target, *args, **kwargs):
     except Exception as e:
         import os
         print(f"安全錯誤線程 : {target.__name__}: {e}")
-        exit_event.set() # 透過事件設置就可以讓所有的thread關閉
-        
+        exit_event.set()  # 透過事件設置就可以讓所有的thread關閉
+
 
 # TradingSysteam.py
 if __name__ == '__main__':
@@ -315,7 +325,6 @@ if __name__ == '__main__':
     thread1.start()
     thread2.start()
     thread3.start()
-
     thread1.join()
     thread2.join()
     thread3.join()
