@@ -61,6 +61,7 @@ class GradientPolicy(nn.Module):
         # shape [N, 1, PORTFOLIO_SIZE + 1, 1]
         # original author
         # output = torch.cat([output, cash_bias], dim=2)
+        # 根據他別的庫 證明cash_bias 我是對的
         output = torch.cat([cash_bias ,output ], dim=2)
 
 

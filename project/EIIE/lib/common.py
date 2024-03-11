@@ -66,43 +66,43 @@ class ReplayBuffer:
         """
         self.buffer.append(experience)
 
-    # def sample(self):
-    #     """Sample from replay buffer. All data from replay buffer is
-    #     returned and the buffer is cleared.
-
-    #     Returns:
-    #       Sample of batch_size size.
-    #     """
-    #     buffer = list(self.buffer)
-
-    #     self.buffer.clear()
-    #     return buffer
-
     def sample(self):
-        """Sample from replay buffer based on geometric distribution.
+        """Sample from replay buffer. All data from replay buffer is
+        returned and the buffer is cleared.
 
         Returns:
-          List of sampled mini-batches.
+          Sample of batch_size size.
         """
-        buffer_length = len(self.buffer)
-        if buffer_length < self.nb:
-            return []  # Not enough data to form a mini-batch
-
-        probabilities = [self.beta * (1 - self.beta) ** (buffer_length - i - self.nb)
-                         for i in range(buffer_length - self.nb + 1)]
-
-        # Normalize probabilities
-        probabilities /= np.sum(probabilities)
-
-        # Select Nb mini-batches based on probabilities
-        batches = []
         buffer = list(self.buffer)
-        for _ in range(self.nb):
-            start_idx = np.random.choice(
-                range(buffer_length - self.nb + 1), p=probabilities)
-            batches.extend(buffer[start_idx:start_idx + self.nb])
 
-        return batches
+        self.buffer.clear()
+        return buffer
+
+    # def sample(self):
+    #     """Sample from replay buffer based on geometric distribution.
+
+    #     Returns:
+    #       List of sampled mini-batches.
+    #     """
+    #     buffer_length = len(self.buffer)
+    #     if buffer_length < self.nb:
+    #         return []  # Not enough data to form a mini-batch
+
+    #     probabilities = [self.beta * (1 - self.beta) ** (buffer_length - i - self.nb)
+    #                      for i in range(buffer_length - self.nb + 1)]
+
+    #     # Normalize probabilities
+    #     probabilities /= np.sum(probabilities)
+
+    #     # Select Nb mini-batches based on probabilities
+    #     batches = []
+    #     buffer = list(self.buffer)
+    #     for _ in range(self.nb):
+    #         start_idx = np.random.choice(
+    #             range(buffer_length - self.nb + 1), p=probabilities)
+    #         batches.extend(buffer[start_idx:start_idx + self.nb])
+
+    #     return batches
 
 
 class RLDataset(IterableDataset):
@@ -218,11 +218,20 @@ class PG:
             while not done:
                 # define last_action and action and update portfolio vector memory
                 last_action = self.pvm.retrieve()
+                
+                # print("本次運行次數:",step_counter,"上次最後權重:",last_action)
+                
+                
                 # (1, 3, 4, 50) # batch_szie,futrue_size,category_of_market,window
                 obs_batch = np.expand_dims(obs, axis=0)
                 last_action_batch = np.expand_dims(last_action, axis=0)
                 # 這裡的last_action_batch 是 wt-1
                 action = self.policy(obs_batch, last_action_batch)
+                
+                
+                # print("本次運行次數:",step_counter,"本次權重:",last_action)
+                # print('*'*120)
+                
                 self.pvm.add(action)
 
                 # run simulation step
@@ -235,14 +244,13 @@ class PG:
 
                 self.buffer.append(exp)
                 # # update policy networks
-                # if len(self.buffer) > self.batch_size:
-                #     self._gradient_ascent()
-
-                step_counter += 1
-                # update policy networks periodically
-                if step_counter % self.batch_size == 0:
-                    print("目前交易次數:",step_counter)
+                if len(self.buffer) > self.batch_size:
                     self._gradient_ascent()
+
+                # update policy networks periodically
+                # step_counter += 1
+                # if step_counter % self.batch_size == 0:                
+                #     self._gradient_ascent()
 
                 obs = next_obs
 

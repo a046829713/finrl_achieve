@@ -48,8 +48,8 @@ def fix_data_different_len_and_na(df: pd.DataFrame):
 def generate_data(begin_time, end_time,tag:str = None):
     new_df = pd.DataFrame()
 
-    # ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'AVAXUSDT', 'TRBUSDT', 'BNBUSDT', 'ETCUSDT', 'INJUSDT', 'LTCUSDT', 'BCHUSDT', 'MKRUSDT']
-    for each_symbol in ['INJUSDT','BNBUSDT','ETCUSDT','LTCUSDT','TRBUSDT',"ENSUSDT","SOLUSDT",'ETHUSDT','BCHUSDT',"AVAXUSDT","BTCUSDT"]:
+    #  ['INJUSDT','BNBUSDT','ETCUSDT','LTCUSDT','TRBUSDT',"ENSUSDT","SOLUSDT",'ETHUSDT','BCHUSDT',"AVAXUSDT","BTCUSDT"]
+    for each_symbol in ['BNBUSDT','TRBUSDT',"SOLUSDT",'ETHUSDT',"BTCUSDT"]:
         df = pd.read_csv(f'EIIE\simulation\data\{each_symbol}-F-30-Min.csv')
         df['tic'] = each_symbol
         df.rename(columns={"Datetime": 'date',
@@ -72,4 +72,4 @@ def generate_data(begin_time, end_time,tag:str = None):
 
 
 if __name__ == '__main__':
-    generate_data(begin_time='2023-09-01', end_time='2024-02-20',tag='train')
+    generate_data(begin_time='2023-01-01', end_time='2023-12-31',tag='train')
