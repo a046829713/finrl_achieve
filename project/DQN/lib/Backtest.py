@@ -93,7 +93,9 @@ class RL_evaluate():
     def load_model(self, model_path: str):
         model = models.DQNConv1D(self.evaluate_env.observation_space.shape,
                                  self.evaluate_env.action_space.n).to(self.device)
-        checkpoint = torch.load(model_path)
+        checkpoint = torch.load(
+            model_path, map_location=self.device)
+        
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()  # 將模型設置為評估模式
         return model
