@@ -1,8 +1,5 @@
 from numba import njit
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
-from utils.Debug_tool import debug
-
 
 
 @njit
@@ -135,7 +132,7 @@ def get_sell_Fees(sell_Fee, fee: float, size, target_price: float, marketpostion
 @njit
 def get_OpenPostionprofit(OpenPostionprofit, marketpostion, last_marketpostion, buy_Fees, Close, buy_sizes, entryprice):
     if marketpostion == 1:
-        OpenPostionprofit = (Close  - entryprice) * buy_sizes
+        OpenPostionprofit = (Close - entryprice) * buy_sizes
     else:
         OpenPostionprofit = 0
     return OpenPostionprofit
@@ -274,7 +271,6 @@ def more_fast_logic_order(
     fee = fee  # 手續費率
     direction = "buyonly"
 
-
     # 主循環區域
     for i in range(Length):
         current_order = shiftorder[i]  # 實際送出訂單位置
@@ -359,7 +355,7 @@ def logic_order(
     """
 
     marketpostion_array = np.empty(shape=Length)
-    entryprice_array = np.empty(shape=Length)    
+    entryprice_array = np.empty(shape=Length)
     buy_Fees_array = np.empty(shape=Length)
     sell_Fees_array = np.empty(shape=Length)
     OpenPostionprofit_array = np.empty(shape=Length)
@@ -369,8 +365,6 @@ def logic_order(
     Gross_loss_array = np.empty(shape=Length)
     all_Fees_array = np.empty(shape=Length)
     netprofit_array = np.empty(shape=Length)
-    
-    
 
     # 此變數區列可以在迭代當中改變
     marketpostion = 0  # 部位方向
@@ -428,7 +422,6 @@ def logic_order(
         OpenPostionprofit = get_OpenPostionprofit(
             OpenPostionprofit, marketpostion, last_marketpostion, buy_Fees, Open, buy_sizes, entryprice)
 
-        
         # 計算已平倉損益(累積式) # v:20221213
         ClosedPostionprofit = get_ClosedPostionprofit(
             ClosedPostionprofit, marketpostion, last_marketpostion, buy_Fees, sell_Fees, sell_sizes, last_entryprice, exitsprice)
@@ -465,23 +458,11 @@ def logic_order(
         Gross_loss_array[i] = Gross_loss
         all_Fees_array[i] = all_Fees
         netprofit_array[i] = netprofit
-        
-        
+
     # for i in range(Length):
     #     print("部位:", marketpostion_array[i], "進場價格:", entryprice_array[i],"未平倉損益:",OpenPostionprofit_array[i],
     #           "買入手續費", buy_Fees_array[i], "賣出手續費:", sell_Fees_array[i])
-    
+
     # 秘密就在這裡,透過這邊統一將order 做出調整,所以後面的order 才可以用SUM
     neworders = get_order(marketpostion_array)
     return neworders, marketpostion_array, entryprice_array, buy_Fees_array, sell_Fees_array, OpenPostionprofit_array, ClosedPostionprofit_array, profit_array, Gross_profit_array, Gross_loss_array, all_Fees_array, netprofit_array
-
-
-
-
-
-
-
-
-
-
-

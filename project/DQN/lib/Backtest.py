@@ -10,6 +10,7 @@ from Count import nb
 import matplotlib.pyplot as plt
 import quantstats as qs
 from pathlib import Path
+import time
 
 
 class Strategy(object):
@@ -50,7 +51,7 @@ class Strategy(object):
         self.df.set_index("Datetime", inplace=True)
 
     def load_Real_time_data(self, df: pd.DataFrame):
-        self.df = df[['date', 'close', 'high', 'low', 'open', 'volume']]
+        self.df = df[['date', 'close', 'high', 'low', 'open', 'volume']].copy()
         self.df.rename(columns={"date": 'Datetime',
                                 'open': 'Open',
                                 "high": "High",
@@ -60,7 +61,6 @@ class Strategy(object):
                                 }, inplace=True)
 
         self.df.set_index('Datetime', inplace=True)
-        
 
     def _strategy_name(self):
         return f"{self.strategytype}-{self.symbol_name}-{self.freq_time}"
@@ -95,7 +95,7 @@ class RL_evaluate():
                                  self.evaluate_env.action_space.n).to(self.device)
         checkpoint = torch.load(
             model_path, map_location=self.device)
-        
+
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()  # 將模型設置為評估模式
         return model
@@ -105,20 +105,17 @@ class RL_evaluate():
         rewards = []
         record_orders = []
         obs = self.evaluate_env.reset()
-        state = torch.tensor([obs]).to(self.device)
+        state = torch.from_numpy(obs).to(self.device)
+        state = state.unsqueeze(0)
 
-        step_idx = 0
         while not done:
             action = self.agent(state)
             action_idx = action.max(dim=1)[1].item()
             record_orders.append(self._parser_order(action_idx))
             _state, reward, done, info = self.evaluate_env.step(action_idx)
-            state = torch.tensor([_state]).to(self.device)
+            state = torch.from_numpy(_state).to(self.device)
+            state = state.unsqueeze(0)
             rewards.append(reward)
-
-            step_idx += 1
-            if step_idx % 100 == 0:
-                print(reward)
 
         self.record_orders = record_orders
 

@@ -6,8 +6,6 @@ class analyze():
         self.net = net
          
     
-    
-    
     def GetAllParameters(self):
         """
         至於 analyze 功能，在調用 analyze(net).Getparameters() 時，

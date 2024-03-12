@@ -187,6 +187,10 @@ class AsyncTrading_system(Trading_system):
 
     def _filter_if_not_trade(self, last_status, if_order_map):
         """
+            last_status 是採用EIIE 的資金分配
+            if_order_map 是採用DQN
+
+            將兩者合併再一起綜合判斷
         Args:
             last_status (_type_): {'0975730876': {'BNBUSDT': [1, 22.136232357786525],'BTCUSDT': [1, 0.16601471242314805], 'ETHUSDT': [1, 2.9745855751452743]}}
             if_order_map (_type_): {'BTCUSDT': 1.0, 'ETHUSDT': 0.0, 'BNBUSDT': 1.0}
@@ -264,14 +268,12 @@ class AsyncTrading_system(Trading_system):
                         last_status, current_size, self.symbol_map, exchange_info=self.dataprovider.Binanceapp.getfuturesinfo())
 
                     print("測試all_order_finally", all_order_finally)
-
                     # 將order_finally 跟下單最小單位相比
                     all_order_finally = self.dataprovider.datatransformer.change_min_postion(
                         all_order_finally, self.dataprovider.Binanceapp.getMinimumOrderQuantity())
 
                     self.printfunc("差異單", all_order_finally)
-                    if all_order_finally:
-                        self.dataprovider.Binanceapp.execute_orders(
+                    self.dataprovider.Binanceapp.execute_orders(
                             all_order_finally, current_size=current_size, symbol_map=self.symbol_map, formal=AppSetting.systeam_setting()['execute_orders'])
 
                     self.printfunc("時間差", time.time() - begin_time)

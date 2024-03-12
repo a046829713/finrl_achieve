@@ -1,0 +1,38 @@
+2024-03-12 09:11 ERROR Traceback (most recent call last):
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\TradingSysteam.py", line 244, in main
+    if_order_map = self.DQN_engin.get_if_order_map(finally_df)
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\DQN\lib\engine.py", line 20, in get_if_order_map
+    re_evaluate = RL_evaluate(each_strategy)
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\DQN\lib\Backtest.py", line 91, in __init__
+    self.test()
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\DQN\lib\Backtest.py", line 112, in test
+    action = self.agent(state)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\DQN\lib\models.py", line 64, in forward
+    conv_out = self.conv(x).view(x.size()[0], -1) #執行flatten的動作
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\container.py", line 215, in forward
+    input = module(input)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\conv.py", line 310, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "C:\Users\user\Desktop\program\Reinforcement_learninng\lib\site-packages\torch\nn\modules\conv.py", line 306, in _conv_forward
+    return F.conv1d(input, weight, bias, self.stride,
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0! (when checking argument for argument weight in method wrapper_CUDA___slow_conv2d_forward)
+
+2024-03-12 11:05 ERROR Traceback (most recent call last):
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\TradingSysteam.py", line 289, in main
+    raise ExcessiveTradeException("當前交易次數超過最大限制")
+utils.Debug_tool.ExcessiveTradeException: 當前交易次數超過最大限制
+
+2024-03-12 11:06 ERROR Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x0000024D4A164B50>

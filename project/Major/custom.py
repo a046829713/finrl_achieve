@@ -412,7 +412,8 @@ class Binance_server(object):
                 # 所以目前不知道該如何修復
                 2.binance.exceptions.BinanceAPIException: APIError(code=-2019): Margin is insufficient.
         """
-
+        if not order_finally:
+            return
         self.trade_count += 1
         print('目前交易次數', self.trade_count)
         print(f"進入下單,目前下單模式:{model}")
@@ -439,7 +440,7 @@ class Binance_server(object):
                             # 比下單資金更大才行
                             if float(Response['maxNotionalValue']) > ready_to_order_size * symbol_map[each_symbol]['Close'].iloc[-1]:
                                 last_leverage = leverage
-                                leverage += 1                                
+                                leverage += 1
                                 Response = client.futures_change_leverage(
                                     symbol=_symbol, leverage=leverage)
                             else:
