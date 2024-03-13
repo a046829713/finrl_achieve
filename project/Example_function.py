@@ -3,17 +3,18 @@ from Major.Datatransformer import Datatransformer
 from EIIE.lib import Train_neural_networks
 import matplotlib.pyplot as plt
 from pathlib import Path
-from  EIIE.lib.simple_evaluate import evaluate_train_test_performance
+from EIIE.lib.simple_evaluate import evaluate_train_test_performance
+
 
 def example_get_symboldata():
     """
         introduction:
             this function is for download history data to experiment.
-            
+
     """
-    symbols =['INJUSDT','BNBUSDT','ETCUSDT','LTCUSDT','TRBUSDT',"ENSUSDT","SOLUSDT",'ETHUSDT','BCHUSDT',"AVAXUSDT","BTCUSDT"]
+    symbols = ['ARUSDT']
     for _each_symbol_name in symbols:
-        DataProvider().Downloader(symbol_name=_each_symbol_name,save=True, freq=30)
+        DataProvider().Downloader(symbol_name=_each_symbol_name, save=True, freq=30)
 
 
 def example_get_target_symbol():
@@ -22,19 +23,24 @@ def example_get_target_symbol():
             this function is for filter 
     """
     all_symbols = DataProvider().get_symbols_history_data(
-            symbol_type='FUTURES', time_type='1d') 
-    
-    example = Datatransformer().get_volume_top_filter_symobl(all_symbols,max_symbols = 11)
+        symbol_type='FUTURES', time_type='1d')
+
+    example = Datatransformer().get_volume_top_filter_symobl(all_symbols, max_symbols=11)
 
 
+def example_get_MTM_target_symbol():
+    all_symbols = DataProvider().get_symbols_history_data(
+        symbol_type='FUTURES', time_type='1d')
 
-def example_reload_all_data(time_type:str):
+    example = Datatransformer().get_mtm_filter_symbol(all_symbols)
+    print(example)
+
+def example_reload_all_data(time_type: str):
     """
     Args:
         time_type (str): '1m','1d'
     """
-    DataProvider().reload_all_data(time_type=time_type,symbol_type ='FUTURES')
-        
+    DataProvider().reload_all_data(time_type=time_type, symbol_type='FUTURES')
 
 
 def example_Train_neural_networks():
@@ -44,12 +50,13 @@ def example_Train_neural_networks():
                                 episodes=100000,
                                 save=True,
                                 pre_train=False,
-                                ) # True
+                                )  # True
 
 
-def example_simple_evaluate(): 
+def example_simple_evaluate():
     evaluate_train_test_performance(Train_data_path=r'EIIE\simulation\train_data.csv',
                                     Test_data_path=r'EIIE\simulation\test_data.csv',
                                     Meta_path=r'EIIE\Meta\policy_EIIE.pt')
 
-example_reload_all_data(time_type ='1m')
+
+example_get_symboldata()

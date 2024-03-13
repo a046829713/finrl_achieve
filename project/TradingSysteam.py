@@ -274,7 +274,7 @@ class AsyncTrading_system(Trading_system):
 
                     self.printfunc("差異單", all_order_finally)
                     self.dataprovider.Binanceapp.execute_orders(
-                            all_order_finally, current_size=current_size, symbol_map=self.symbol_map, formal=AppSetting.systeam_setting()['execute_orders'])
+                            all_order_finally, current_size=current_size, symbol_map=self.symbol_map, formal=self.systeam_setting['execute_orders'])
 
                     self.printfunc("時間差", time.time() - begin_time)
                     last_min = datetime.datetime.now().minute
@@ -282,7 +282,7 @@ class AsyncTrading_system(Trading_system):
                 else:
                     time.sleep(1)
 
-                if self.dataprovider.Binanceapp.trade_count > AppSetting.systeam_setting()['emergency_times']:
+                if self.dataprovider.Binanceapp.trade_count > self.systeam_setting['emergency_times']:
                     self.printfunc("緊急狀況處理-交易次數過多")
                     raise ExcessiveTradeException("當前交易次數超過最大限制")
 
