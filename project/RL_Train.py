@@ -22,8 +22,8 @@ class RL_Train():
         self.hyperparameters()
 
         # 訓練環境
-        data = DataFeature().get_train_net_work_data_by_path(symbol = 'SOLUSDT',
-            data_path=r'DQN\simulation\data\SOLUSDT-F-30-Min.csv')
+        data = DataFeature().get_train_net_work_data_by_path(symbol = 'SSVUSDT',
+            data_path=r'DQN\simulation\data\SSVUSDT-F-30-Min.csv')
 
         self.writer = SummaryWriter(
             log_dir=os.path.join(

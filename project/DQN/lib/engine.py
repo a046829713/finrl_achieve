@@ -6,7 +6,7 @@ import pandas as pd
 
 class EngineBase():
     def __init__(self) -> None:
-        self.symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT','ARUSDT',"SOLUSDT"]
+        self.symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT','ARUSDT',"SOLUSDT","SSVUSDT"]
         self.setting = AppSetting.get_DQN_setting()
         self.strategy_prepare()
 

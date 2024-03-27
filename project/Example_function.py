@@ -12,7 +12,7 @@ def example_get_symboldata():
             this function is for download history data to experiment.
 
     """
-    symbols = ['SOLUSDT']
+    symbols = ['SSVUSDT']
     for _each_symbol_name in symbols:
         DataProvider().Downloader(symbol_name=_each_symbol_name, save=True, freq=30)
 
