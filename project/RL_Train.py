@@ -11,7 +11,7 @@ from tensorboardX import SummaryWriter
 
 
 class RL_Train():
-    def __init__(self) -> None:
+    def __init__(self,symbol:str) -> None:
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
@@ -22,8 +22,8 @@ class RL_Train():
         self.hyperparameters()
 
         # 訓練環境
-        data = DataFeature().get_train_net_work_data_by_path(symbol = 'SSVUSDT',
-            data_path=r'DQN\simulation\data\SSVUSDT-F-30-Min.csv')
+        data = DataFeature().get_train_net_work_data_by_path(symbol = symbol,
+            data_path=f'DQN\simulation\data\{symbol}-F-30-Min.csv')
 
         self.writer = SummaryWriter(
             log_dir=os.path.join(
@@ -109,32 +109,6 @@ class RL_Train():
                 if len(self.buffer) < self.REPLAY_INITIAL:
                     continue
                 
-                # if self.step_idx % self.EVAL_EVERY_STEP == 0:
-                #     mean_vals = []
-                #     with torch.no_grad():  # 禁用梯度計算
-                #         for _ in range(self.NUM_EVAL_EPISODES):
-                #             # 更新驗證資料
-                #             eval_states = common.update_eval_states(
-                #                 self.buffer, self.STATES_TO_EVALUATE)
-                #             # 計算平均
-                #             mean_val = common.calc_values_of_states(
-                #                 eval_states, self.net, device=self.device)
-                            
-                #             mean_vals.append(mean_val)
-
-                #     mean_of_means = np.mean(mean_vals)
-
-                #     self.writer.add_scalar(
-                #         "values_mean", mean_of_means, self.step_idx)
-                    
-                #     if self.best_mean_val is None or self.best_mean_val < mean_of_means:
-                #         if self.best_mean_val is not None:
-                #             print("%d: Best mean value updated %.3f -> %.3f" %
-                #                   (self.step_idx, self.best_mean_val, mean_of_means))
-                #         self.best_mean_val = mean_of_means
-                #         torch.save(self.net.state_dict(), os.path.join(
-                #             self.saves_path, "mean_val-%.3f.data" % mean_of_means))
-
                 self.optimizer.zero_grad()
                 batch = self.buffer.sample(self.BATCH_SIZE)
 
@@ -164,6 +138,9 @@ class RL_Train():
                     }
                     self.save_checkpoint(checkpoint, os.path.join(
                         self.saves_path, f"checkpoint-{idx}.pt"))
+                    
+                if self.step_idx > self.terminate_times:
+                    break
 
     def hyperparameters(self):
         self.BARS_COUNT = 50  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
@@ -185,7 +162,8 @@ class RL_Train():
         self.NUM_EVAL_EPISODES = 10  # 每次评估的样本数
         self.BATCH_SIZE = 32  # 每次要從buffer提取的資料筆數,用來給神經網絡更新權重
         self.STATES_TO_EVALUATE = 10000  # 每次驗證一萬筆資料
-
+        self.terminate_times = 8000000
+        
     def save_checkpoint(self, state, filename):
         # 保存檢查點的函數
         torch.save(state, filename)
