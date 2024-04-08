@@ -1,0 +1,14 @@
+2024-04-08 09:18 ERROR Traceback (most recent call last):
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\TradingSysteam.py", line 250, in main
+    self.engine.work(finally_df)
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\EIIE\lib\engine.py", line 39, in work
+    _each_key_value[1] = 0
+TypeError: 'tuple' object does not support item assignment
+
+2024-04-08 09:21 ERROR Traceback (most recent call last):
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\TradingSysteam.py", line 250, in main
+    self.engine.work(finally_df)
+  File "c:\Users\user\Desktop\program\Reinforcement_learninng\finrl_achieve\project\EIIE\lib\engine.py", line 43, in work
+    new_out_put.append(tuple(_each_key_value))
+TypeError: unsupported operand type(s) for -: 'list' and 'int'
+

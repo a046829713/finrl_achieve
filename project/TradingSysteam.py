@@ -243,6 +243,7 @@ class AsyncTrading_system(Trading_system):
 
                     if_order_map = self.DQN_engin.get_if_order_map(finally_df)
                     
+                    
                     finally_df = self.dataprovider.datatransformer.filter_last_time_series(
                         finally_df)
 
