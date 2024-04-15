@@ -139,11 +139,11 @@ class RL_Train():
                     self.save_checkpoint(checkpoint, os.path.join(
                         self.saves_path, f"checkpoint-{idx}.pt"))
                     
-                if self.step_idx > self.terminate_times:
-                    break
+                # if self.step_idx > self.terminate_times:
+                #     break
 
     def hyperparameters(self):
-        self.BARS_COUNT = 50  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
+        self.BARS_COUNT = 300  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
         self.GAMMA = 0.99
         self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100 
         self.REWARD_STEPS = 2
@@ -169,4 +169,4 @@ class RL_Train():
         torch.save(state, filename)
 
 
-RL_Train()
+RL_Train(symbol='BTCUSDT')

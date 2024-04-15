@@ -22,6 +22,7 @@ class Strategy(object):
                  strategytype: str,
                  symbol_name: str,
                  freq_time: int,
+                 model_feature_len:int,
                  fee: float,
                  slippage: float,
                  model_count_path: str,
@@ -32,6 +33,7 @@ class Strategy(object):
         self.strategytype = strategytype
         self.symbol_name = symbol_name  # 商品名稱
         self.freq_time = freq_time  # 商品週期
+        self.model_feature_len = model_feature_len  # 商品週期
         self.fee = fee  # 手續費
         self.slippage = slippage  # 滑價
         self.model_count_path = model_count_path  # 模型路徑
@@ -71,7 +73,7 @@ class RL_evaluate():
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
-        self.hyperparameters()
+        self.hyperparameters(strategy)
 
         data = DataFeature().get_train_net_work_data_by_pd(symbol=strategy.symbol_name,
                                                            df=strategy.df)
@@ -119,8 +121,8 @@ class RL_evaluate():
 
         self.record_orders = record_orders
 
-    def hyperparameters(self):
-        self.BARS_COUNT = 50  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
+    def hyperparameters(self,strategy):
+        self.BARS_COUNT = strategy.model_feature_len  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
         self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100
         self.REWARD_ON_CLOSE = False  # 結束之後才給獎勵
 
