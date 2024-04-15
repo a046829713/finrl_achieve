@@ -49,7 +49,7 @@ class EngineBase():
     
     def strategy_prepare(self):
         # 設定你想查看的資料夾路徑
-        folder_path = 'DQN\Meta'
+        folder_path = os.path.join('DQN','Meta')
 
         # 獲取資料夾中的所有檔案和子資料夾名稱
         files_and_dirs = os.listdir(folder_path)
