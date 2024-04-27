@@ -23,6 +23,7 @@ class EngineBase():
             features=["close", "high", "low"]
         )
         self.last_order_info = self._performance(environment=environment)
+        # this is to stop EIIE,because i find it costs too much taxs and fees 
         new_out_put = []
         for _each_key_value in self.last_order_info:
             _each_key_value = list(_each_key_value)
@@ -32,7 +33,6 @@ class EngineBase():
                 _each_key_value[1] = 1 / (len(self.last_order_info) -1)
             new_out_put.append(tuple(_each_key_value))
         self.last_order_info = new_out_put
-
 
     def _performance(self, environment: PortfolioOptimizationEnv):
         """

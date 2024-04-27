@@ -84,14 +84,12 @@ class DQNAgent(BaseAgent):
     def __call__(self, states, agent_states=None):
         if agent_states is None:
             agent_states = [None] * len(states)
+
         if self.preprocessor is not None:
             states = self.preprocessor(states)
             if torch.is_tensor(states):
                 states = states.to(self.device)
-
-        # cnn會特別用到這個
-        # marketpositions = states[:, -2, 0]  # 從 states 提取部位信息
-
+        
         q_v = self.dqn_model(states)
         q = q_v.data.cpu().numpy()
         # actions = self.action_selector(q,marketpositions)

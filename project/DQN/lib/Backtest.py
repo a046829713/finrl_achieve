@@ -93,7 +93,7 @@ class RL_evaluate():
         self.test()
 
     def load_model(self, model_path: str):
-        model = models.DQNConv1D(self.evaluate_env.observation_space.shape,
+        model = models.DQNConv1D_Large(self.evaluate_env.observation_space.shape,
                                  self.evaluate_env.action_space.n).to(self.device)
         checkpoint = torch.load(
             model_path, map_location=self.device)

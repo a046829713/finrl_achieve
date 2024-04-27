@@ -5,14 +5,15 @@ import collections
 from torch.autograd import Variable
 import time
 import numpy as np
-
+import itertools
 from collections import namedtuple, deque
 import time
 from .agent import BaseAgent
 from .common import utils
 
 # one single experience step
-Experience = namedtuple('Experience', ['state', 'action', 'reward', 'done'])
+Experience = namedtuple(
+    'Experience', ['state', 'action', 'reward', 'done', 'info'])
 
 
 class ExperienceSource:
@@ -21,6 +22,7 @@ class ExperienceSource:
 
     Every experience contains n list of Experience entries
     """
+
     def __init__(self, env, agent, steps_count=2, steps_delta=1, vectorized=False):
         """
         Create simple experience source
@@ -35,25 +37,38 @@ class ExperienceSource:
         assert isinstance(steps_count, int)
         assert steps_count >= 1
         assert isinstance(vectorized, bool)
-        
+
         if isinstance(env, (list, tuple)):
             self.pool = env
         else:
             self.pool = [env]
-        
-        self.agent = agent # <DQN.ptan.agent.DQNAgent object at 0x0000016C63B05D60>
-        self.steps_count = steps_count # 3
-        self.steps_delta = steps_delta # 1
+
+        self.agent = agent  # <DQN.ptan.agent.DQNAgent object at 0x0000016C63B05D60>
+        self.steps_count = steps_count  # 3
+        self.steps_delta = steps_delta  # 1
         self.total_rewards = []
         self.total_steps = []
-        self.vectorized = vectorized # False
+        self.vectorized = vectorized  # False
 
-    
+    def _group_list(self, items, lens):
+        """
+        Unflat the list of items by lens
+        :param items: list of items
+        :param lens: list of integers
+        :return: list of list of items grouped by lengths
+        """
+        res = []
+        cur_ofs = 0
+        for g_len in lens:
+            res.append(items[cur_ofs:cur_ofs+g_len])
+            cur_ofs += g_len
+        return res
+
     def __iter__(self):
         print("ExperienceSource iter 測試進入次數:",)
         states, agent_states, histories, cur_rewards, cur_steps = [], [], [], [], []
         env_lens = []
-        
+
         for env in self.pool:
             obs = env.reset()
             # if the environment is vectorized, all it's output is lists of results.
@@ -64,80 +79,90 @@ class ExperienceSource:
             else:
                 obs_len = 1
                 states.append(obs)
+
             env_lens.append(obs_len)
 
             for _ in range(obs_len):
-                histories.append(deque(maxlen=self.steps_count)) 
+                histories.append(deque(maxlen=self.steps_count))
                 cur_rewards.append(0.0)
                 cur_steps.append(0)
-                agent_states.append(self.agent.initial_state()) 
+                agent_states.append(self.agent.initial_state())
 
-            
             # states # 隨機狀態
             # agent_states # [None]
             # histories # [deque([], maxlen=3)]
             # cur_rewards # [0.0]
             # cur_steps # [0]
-            
-            
+
         iter_idx = 0
         while True:
-            actions = [None] * len(states) # [None]            
+            actions = [None] * len(states)  # [None]
             states_input = []
             states_indices = []
             for idx, state in enumerate(states):
                 if state is None:
-                    actions[idx] = self.pool[0].action_space.sample()  # assume that all envs are from the same family
+                    # assume that all envs are from the same family
+                    actions[idx] = self.pool[0].action_space.sample()
                 else:
-                    states_input.append(state) # 狀態
-                    states_indices.append(idx) # 索引
-            
+                    states_input.append(state)  # 狀態
+                    states_indices.append(idx)  # 索引
+
             if states_input:
                 # 會吐出動作和新狀態[2] [None] # 不過原作者這邊好似沒有使用到agent_states
-                states_actions, new_agent_states = self.agent(states_input, agent_states)
+                states_actions, new_agent_states = self.agent(
+                    states_input, agent_states)
 
-                for idx, action in enumerate(states_actions):                    
+                for idx, action in enumerate(states_actions):
                     g_idx = states_indices[idx]
                     actions[g_idx] = action
                     agent_states[g_idx] = new_agent_states[idx]
-            
-            # [[2]]
-            grouped_actions = _group_list(actions, env_lens)
 
+            # [[2]]
+            grouped_actions = self._group_list(actions, env_lens)
             global_ofs = 0
             for env_idx, (env, action_n) in enumerate(zip(self.pool, grouped_actions)):
-                # 0 (<TimeLimit<StocksEnv instance>>, [2])                
+                # 0 (<TimeLimit<StocksEnv instance>>, [2])
                 if self.vectorized:
                     next_state_n, r_n, is_done_n, _ = env.step(action_n)
                 else:
-                    next_state, r, is_done, _ = env.step(action_n[0])
-                    next_state_n, r_n, is_done_n = [next_state], [r], [is_done]
+                    next_state, r, is_done, info = env.step(action_n[0])
+                    next_state_n, r_n, is_done_n, info_n = [
+                        next_state], [r], [is_done], [info]
 
-                for ofs, (action, next_state, r, is_done) in enumerate(zip(action_n, next_state_n, r_n, is_done_n)):                
+                for ofs, (action, next_state, r, is_done, info) in enumerate(zip(action_n, next_state_n, r_n, is_done_n, info_n)):
                     idx = global_ofs + ofs
+                    # idx 永遠是0
                     state = states[idx]
                     history = histories[idx]
+
                     cur_rewards[idx] += r
                     cur_steps[idx] += 1
+
                     if state is not None:
-                        history.append(Experience(state=state, action=action, reward=r, done=is_done))
+                        history.append(Experience(
+                            state=state, action=action, reward=r, done=is_done, info=info))
+
                     if len(history) == self.steps_count and iter_idx % self.steps_delta == 0:
                         yield tuple(history)
+
                     states[idx] = next_state
-                    # 如果按照這樣來看,如果累積多次的話,會跟原本的reset on close 不一樣
                     if is_done:
                         # generate tail of history
                         while len(history) >= 1:
                             yield tuple(history)
                             history.popleft()
+
                         self.total_rewards.append(cur_rewards[idx])
                         self.total_steps.append(cur_steps[idx])
                         cur_rewards[idx] = 0.0
                         cur_steps[idx] = 0
                         # vectorized envs are reset automatically
-                        states[idx] = env.reset() if not self.vectorized else None
+                        states[idx] = env.reset(
+                        ) if not self.vectorized else None
                         agent_states[idx] = self.agent.initial_state()
+
                         history.clear()
+
                 global_ofs += len(action_n)
             iter_idx += 1
 
@@ -155,23 +180,9 @@ class ExperienceSource:
         return res
 
 
-def _group_list(items, lens):
-    """
-    Unflat the list of items by lens
-    :param items: list of items
-    :param lens: list of integers
-    :return: list of list of items grouped by lengths
-    """
-    res = []
-    cur_ofs = 0
-    for g_len in lens:
-        res.append(items[cur_ofs:cur_ofs+g_len])
-        cur_ofs += g_len
-    return res
-
-
 # those entries are emitted from ExperienceSourceFirstLast. Reward is discounted over the trajectory piece
-ExperienceFirstLast = collections.namedtuple('ExperienceFirstLast', ('state', 'action', 'reward', 'last_state'))
+ExperienceFirstLast = collections.namedtuple(
+    'ExperienceFirstLast', ('state', 'action', 'reward', 'last_state', 'info'))
 
 
 class ExperienceSourceFirstLast(ExperienceSource):
@@ -186,28 +197,36 @@ class ExperienceSourceFirstLast(ExperienceSource):
     中儲存完整的軌跡。對於每一個軌跡片段，它會計算折扣獎勵，並且只輸出第一個和最後一個狀態，以及在初始狀態中採取的行動。
 
     如果在劇集結束時我們有部分軌跡，那麼last_state將為None。
-    
+
     """
+
     def __init__(self, env, agent, gamma, steps_count=1, steps_delta=1, vectorized=False):
         assert isinstance(gamma, float)
-        super(ExperienceSourceFirstLast, self).__init__(env, agent, steps_count+1, steps_delta, vectorized=vectorized)
+        super(ExperienceSourceFirstLast, self).__init__(
+            env, agent, steps_count+1, steps_delta, vectorized=vectorized)
         self.gamma = gamma
         self.steps = steps_count
 
     def __iter__(self):
-        for exp in super(ExperienceSourceFirstLast, self).__iter__():            
+        for exp in super(ExperienceSourceFirstLast, self).__iter__():
             if exp[-1].done and len(exp) <= self.steps:
                 last_state = None
                 elems = exp
             else:
                 last_state = exp[-1].state
                 elems = exp[:-1]
+
             total_reward = 0.0
+
             for e in reversed(elems):
                 total_reward *= self.gamma
                 total_reward += e.reward
-            yield ExperienceFirstLast(state=exp[0].state, action=exp[0].action,
-                                      reward=total_reward, last_state=last_state)
+
+            yield ExperienceFirstLast(state=exp[0].state,
+                                      action=exp[0].action,
+                                      reward=total_reward,
+                                      last_state=last_state,
+                                      info=exp[0].info)
 
 
 def discount_with_dones(rewards, dones, gamma):
@@ -230,6 +249,7 @@ class ExperienceSourceRollouts:
     3. discounted rewards, with values approximation
     4. values
     """
+
     def __init__(self, env, agent, gamma, steps_count=5):
         """
         Constructs the rollout experience source
@@ -256,7 +276,8 @@ class ExperienceSourceRollouts:
     def __iter__(self):
         pool_size = len(self.pool)
         states = [np.array(e.reset()) for e in self.pool]
-        mb_states = np.zeros((pool_size, self.steps_count) + states[0].shape, dtype=states[0].dtype)
+        mb_states = np.zeros((pool_size, self.steps_count) +
+                             states[0].shape, dtype=states[0].dtype)
         mb_rewards = np.zeros((pool_size, self.steps_count), dtype=np.float32)
         mb_values = np.zeros((pool_size, self.steps_count), dtype=np.float32)
         mb_actions = np.zeros((pool_size, self.steps_count), dtype=np.int64)
@@ -291,9 +312,11 @@ class ExperienceSourceRollouts:
                     env_rewards = env_rewards.tolist()
                     env_dones = env_dones.tolist()
                     if not env_dones[-1]:
-                        env_rewards = discount_with_dones(env_rewards + [last_value], env_dones + [False], self.gamma)[:-1]
+                        env_rewards = discount_with_dones(
+                            env_rewards + [last_value], env_dones + [False], self.gamma)[:-1]
                     else:
-                        env_rewards = discount_with_dones(env_rewards, env_dones, self.gamma)
+                        env_rewards = discount_with_dones(
+                            env_rewards, env_dones, self.gamma)
                     mb_rewards[env_idx] = env_rewards
                 yield mb_states.reshape((-1,) + mb_states.shape[2:]), mb_rewards.flatten(), mb_actions.flatten(), mb_values.flatten()
                 step_idx = 0
@@ -323,6 +346,7 @@ class ExperienceSourceBuffer:
     """
     The same as ExperienceSource, but takes episodes from the buffer
     """
+
     def __init__(self, buffer, steps_count=1):
         """
         Create buffered experience source
@@ -347,73 +371,72 @@ class ExperienceSourceBuffer:
 
 
 class ExperienceReplayBuffer:
-    def __init__(self, experience_source, buffer_size):
+    def __init__(self, experience_source, buffer_size,symbol_size:int):
         assert isinstance(experience_source, (ExperienceSource, type(None)))
         assert isinstance(buffer_size, int)
-        self.experience_source_iter = None if experience_source is None else iter(experience_source)
-        self.buffer = []
+        
+        self.experience_source_iter = None if experience_source is None else iter(
+            experience_source)
+        
+        # 用來儲存所有商品的空間
+        self.buffer = {}            
         self.capacity = buffer_size
-        self.pos = 0
+        self.symbol_size = symbol_size
 
     def __len__(self):
-        return len(self.buffer)
+        return sum(len(deq) for deq in self.buffer.values())
+    
+    def each_symbol_the_drill(self):
+        return { key:len(self.buffer[key]) for key in self.buffer}
 
-    def __iter__(self):
-        return iter(self.buffer)
+
+    def each_num_len_enough(self,init_size:int):
+        # 用來判斷神經網絡是否需要跳過，希望各商品都有充足的樣本可以使用
+        # 需要多個樣本都有了再開始判斷數量
+        if len(self.buffer) != self.symbol_size:
+            return False
+        
+        # 若有任一個商品不滿足，直接跳過
+        for deq in self.buffer.values():
+            if len(deq) < init_size:
+                return False
+        
+        return True
 
     def sample(self, batch_size):
-        """
-        Get one random batch from experience replay
-        TODO: implement(實施) sampling order policy
-        :param batch_size:
-        :return:
-        """
-        if len(self.buffer) <= batch_size:
-            return self.buffer
-        # Warning: replace=False makes random.choice O(n)
-        keys = np.random.choice(len(self.buffer), batch_size, replace=True)
-        return [self.buffer[key] for key in keys]
+        # 隨機取得一個商品
+        symbol = random.choice(list(self.buffer.keys()))
 
-    def _add(self, sample):
-        """
-        
-            將跌代的資料帶入
-            萬一超過就覆寫
-        Args:
-            sample (_type_): _description_
-        """
-        if len(self.buffer) < self.capacity:
-            self.buffer.append(sample)
-        else:
-            self.buffer[self.pos] = sample
-            self.pos = (self.pos + 1) % self.capacity
+        the_data = self.buffer[symbol]
+        # 在從商品裡面批次選擇
+        start = random.randint(0, len(the_data) - batch_size)
+        slicing_sample = list(itertools.islice(the_data, start, start + batch_size))
+
+        # 檢查商品順序
+        first_len = None
+        for experiencefirstlast in slicing_sample:
+            if first_len is None:
+                first_len = experiencefirstlast.info['offset'] 
+            else:
+                if experiencefirstlast.info['offset'] == first_len + 1:
+                    first_len = experiencefirstlast.info['offset']
+                else:
+                    # 遞迴取樣
+                    return self.sample(batch_size)
+
+        return slicing_sample
 
     def populate(self, samples):
         """
         將樣本填入緩衝區中
-        Populates samples into the buffer
-        :param samples: how many samples to populate
-        
-        <class 'ptan.experience.ExperienceFirstLast'>
-        entry: ExperienceFirstLast(state=array([ 0.00773994, -0.01083591,  0.00773994,  0.00456621, -0.01065449,
-        0.00456621,  0.00607903, -0.00455927,  0.00455927,  0.        ,
-       -0.01783061, -0.00148588,  0.00437956, -0.01021898, -0.00291971,
-        0.00442478, -0.02359882, -0.02359882,  0.01226994, -0.00153374,
-        0.00306748,  0.01076923, -0.00615385,  0.00153846,  0.00310559,
-       -0.01086957, -0.00465839,  0.02503912, -0.00312989,  0.02190923,
-        0.        ,  0.        ], dtype=float32), action=1, reward=-2.7099031710120034, last_state=array([ 0.00607903, -0.00455927,  0.00455927,  0.        , -0.01783061,
-       -0.00148588,  0.00437956, -0.01021898, -0.00291971,  0.00442478,
-       -0.02359882, -0.02359882,  0.01226994, -0.00153374,  0.00306748,
-        0.01076923, -0.00615385,  0.00153846,  0.00310559, -0.01086957,
-       -0.00465839,  0.02503912, -0.00312989,  0.02190923,  0.00311042,
-       -0.00777605, -0.00311042,  0.00944882,  0.        ,  0.0015748 ,
-        1.        , -0.02603369], dtype=float32))
         """
         for _ in range(samples):
-            entry = next(self.experience_source_iter)
-            self._add(entry)
-
-
+            entry = next(self.experience_source_iter)            
+            if entry.info['instrument'] not in self.buffer:
+                self.buffer[entry.info['instrument']] = deque(maxlen=self.capacity)
+            else:
+                self.buffer[entry.info['instrument']].append(entry)
+        
 class PrioReplayBufferNaive:
     def __init__(self, exp_source, buf_size, prob_alpha=0.6):
         self.exp_source_iter = iter(exp_source)
@@ -445,7 +468,8 @@ class PrioReplayBufferNaive:
         probs = np.array(prios, dtype=np.float32) ** self.prob_alpha
 
         probs /= probs.sum()
-        indices = np.random.choice(len(self.buffer), batch_size, p=probs, replace=True)
+        indices = np.random.choice(
+            len(self.buffer), batch_size, p=probs, replace=True)
         samples = [self.buffer[idx] for idx in indices]
         total = len(self.buffer)
         weights = (total * probs[indices]) ** (-beta)
@@ -459,7 +483,8 @@ class PrioReplayBufferNaive:
 
 class PrioritizedReplayBuffer(ExperienceReplayBuffer):
     def __init__(self, experience_source, buffer_size, alpha):
-        super(PrioritizedReplayBuffer, self).__init__(experience_source, buffer_size)
+        super(PrioritizedReplayBuffer, self).__init__(
+            experience_source, buffer_size)
         assert alpha > 0
         self._alpha = alpha
 
@@ -518,6 +543,6 @@ class BatchPreprocessor:
     Abstract preprocessor class descendants to which converts experience
     batch to form suitable to learning.
     """
+
     def preprocess(self, batch):
         raise NotImplementedError
-

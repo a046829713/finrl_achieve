@@ -103,7 +103,7 @@ class Trading_system():
         all_symbols = self.dataprovider.get_symbols_history_data(
             symbol_type='FUTURES', time_type='1d')
 
-        return self.dataprovider.filter_useful_symbol(all_symbols, tag="VOLUME_TYPE")
+        return self.dataprovider.filter_useful_symbol(all_symbols, tag="MTM_TYPE")
 
     def reload_all_futures_data(self):
         """
@@ -166,13 +166,27 @@ class AsyncTrading_system(Trading_system):
         # 將標得注入引擎
         self.asyncDataProvider = AsyncDataProvider()
 
+    # def process_target_symbol(self):
+    #     """
+    #        商品改成非動態的，因為會變成指定的
+    #     """
+    #     old_symbol = self.dataprovider.Binanceapp.getfutures_account_name()  # 第一次運行會是空的
+
+    #     print(old_symbol)
+
+    #     self.dataprovider.Binanceapp.
+    #     # 合併舊的商品 因為這樣更新的商品的時候可以把庫存清掉
+    #     self.targetsymbols = list(set(old_symbol + self.DQN_engin.symbols))
+    
     def process_target_symbol(self):
-        """
-           商品改成非動態的，因為會變成指定的
-        """
-        old_symbol = self.dataprovider.Binanceapp.getfutures_account_name()  # 第一次運行會是空的
-        # 合併舊的商品 因為這樣更新的商品的時候可以把庫存清掉
-        self.targetsymbols = list(set(old_symbol + self.DQN_engin.symbols))
+        # 取得要交易的標的
+        market_symobl = list(map(lambda x: x[0], self.get_target_symbol()))
+
+        # 取得binance實際擁有標的,合併 (因為原本有部位的也要持續追蹤)
+        self.targetsymbols = self.datatransformer.target_symobl(
+            market_symobl, self.dataprovider.Binanceapp.getfutures_account_name())        
+
+        print("目前交易商品:",self.targetsymbols)
 
     def check_money_level(self):
         """
@@ -237,10 +251,16 @@ class AsyncTrading_system(Trading_system):
                         self.get_catch(name, eachCatchDf)
 
                     self.printfunc("開始進入回測")
+
+                    # DQN 準備策略
+                    self.DQN_engin.strategy_prepare(self.targetsymbols)
+
                     # 準備將資料塞入神經網絡或是策略裡面
                     finally_df = self.dataprovider.get_trade_data(
-                        self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'],trade_targets = self.DQN_engin.symbols)
+                        self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'])
 
+
+                    print(finally_df)
                     if_order_map = self.DQN_engin.get_if_order_map(finally_df)
                     
                     

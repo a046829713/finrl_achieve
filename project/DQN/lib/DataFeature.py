@@ -51,15 +51,16 @@ class DataFeature():
         rc = (prices.close - prices.open) / prices.open
         return PricesObject(open=prices.open, high=rh, low=rl, close=rc, volume=prices.volume)
 
-    def get_train_net_work_data_by_path(self, symbol:str, data_path: str) -> dict:
+    def get_train_net_work_data_by_path(self, symbols:list) -> dict:
         """
             用來取得類神經網絡所需要的資料
         """
         out_dict = {}
-        df = pd.read_csv(data_path)
-        df.set_index('Datetime', inplace=True)
-        self.df = df
-        out_dict.update({symbol: self.load_relative()})        
+        for symbol in symbols:
+            df = pd.read_csv(f'DQN\simulation\data\{symbol}-F-30-Min.csv')
+            df.set_index('Datetime', inplace=True)
+            self.df = df
+            out_dict.update({symbol: self.load_relative()})        
         return out_dict
     
     def get_train_net_work_data_by_pd(self, symbol:str, df: pd.DataFrame) -> dict:

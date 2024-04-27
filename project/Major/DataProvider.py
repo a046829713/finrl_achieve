@@ -172,10 +172,9 @@ class DataProvider:
 
             return original_df, eachCatchDf
 
-    def get_trade_data(self, targetsymbols, symbol_map, freq, trade_targets:list):
+    def get_trade_data(self, targetsymbols, symbol_map, freq):
         finally_df = pd.DataFrame()
-        for symbol_name in targetsymbols:
-            if symbol_name not in trade_targets:continue # 資金分配模組要以DQN為主，不能讓舊有的商品進來分配資金
+        for symbol_name in targetsymbols:            
             # 取得可交易之資料
             each_df = self.datatransformer.get_tradedata(
                 symbol_map[symbol_name], freq=freq)

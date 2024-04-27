@@ -318,3 +318,4 @@ class Datatransformer:
             return group.iloc[:-1]
         
         return df.groupby('tic').apply(_remove_last).reset_index(drop=True)
+    

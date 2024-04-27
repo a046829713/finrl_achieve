@@ -8,22 +8,26 @@ from DQN import ptan
 from DQN.lib.DataFeature import DataFeature
 from datetime import datetime
 from tensorboardX import SummaryWriter
-
+import time
 
 class RL_Train():
-    def __init__(self,symbol:str) -> None:
+    def prepare_data(self):
+        return DataFeature().get_train_net_work_data_by_path(self.symbols)
+
+
+    def __init__(self,symbols:list) -> None:
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
+        self.symbols = list(set(symbols)) # 避免重複
 
         # 設定檔
         # setting = AppSetting.get_DQN_setting()
 
         # 超參數設定
         self.hyperparameters()
+        data = self.prepare_data()
 
-        # 訓練環境
-        data = DataFeature().get_train_net_work_data_by_path(symbol = symbol,
-            data_path=f'DQN\simulation\data\{symbol}-F-30-Min.csv')
+
 
         self.writer = SummaryWriter(
             log_dir=os.path.join(
@@ -39,7 +43,6 @@ class RL_Train():
         train_env = environment.Env(
             prices=data, state=state, random_ofs_on_reset=True)
 
-        self.symbol_code = list(train_env._prices.keys())[0]
 
         # 準備模型
         self.net = models.DQNConv1D_Large(train_env.observation_space.shape,
@@ -58,7 +61,7 @@ class RL_Train():
             train_env, agent, self.GAMMA, steps_count=self.REWARD_STEPS)
 
         self.buffer = ptan.experience.ExperienceReplayBuffer(
-            self.exp_source, self.REPLAY_SIZE)
+            self.exp_source, self.REPLAY_SIZE,len(self.symbols))
 
         self.optimizer = optim.Adam(
             self.net.parameters(), lr=self.LEARNING_RATE)
@@ -83,7 +86,7 @@ class RL_Train():
             print("建立新的儲存點")
             # 用來儲存的位置
             self.saves_path = os.path.join(self.SAVES_PATH, datetime.strftime(
-                datetime.now(), "%Y%m%d-%H%M%S") + '-' + str(self.BARS_COUNT) + 'k-' + self.symbol_code)
+                datetime.now(), "%Y%m%d-%H%M%S") + '-' + str(self.BARS_COUNT) + 'k-')
 
             os.makedirs(self.saves_path, exist_ok=True)
             self.step_idx = 0
@@ -105,8 +108,8 @@ class RL_Train():
                 if new_rewards:
                     reward_tracker.reward(
                         new_rewards[0], self.step_idx, self.selector.epsilon)
-
-                if len(self.buffer) < self.REPLAY_INITIAL:
+                
+                if not(self.buffer.each_num_len_enough(self.REPLAY_INITIAL)):
                     continue
                 
                 self.optimizer.zero_grad()
@@ -147,17 +150,17 @@ class RL_Train():
         self.GAMMA = 0.99
         self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100 
         self.REWARD_STEPS = 2
-        self.REPLAY_SIZE = 100000
+        self.REPLAY_SIZE = 50000
+        self.REPLAY_INITIAL = 1000
         self.LEARNING_RATE = 0.0001  # optim 的學習率
         self.EPSILON_START = 1.0  # 起始機率(一開始都隨機運行)
         self.SAVES_PATH = "saves"  # 儲存的路徑
         self.EPSILON_STOP = 0.1
-        self.REPLAY_INITIAL = 10000
         self.TARGET_NET_SYNC = 1000
         self.CHECKPOINT_EVERY_STEP = 20000
         self.VALIDATION_EVERY_STEP = 100000
         self.WRITER_EVERY_STEP = 100
-        self.EPSILON_STEPS = 1000000
+        self.EPSILON_STEPS = 1000000 * len(self.symbols)
         self.EVAL_EVERY_STEP = 10000  # 每一萬步驗證一次
         self.NUM_EVAL_EPISODES = 10  # 每次评估的样本数
         self.BATCH_SIZE = 32  # 每次要從buffer提取的資料筆數,用來給神經網絡更新權重
@@ -168,5 +171,6 @@ class RL_Train():
         # 保存檢查點的函數
         torch.save(state, filename)
 
-
-RL_Train(symbol='BTCUSDT')
+# 我認為可以訓練出通用的模型了
+# 多數據供應
+RL_Train(symbols=['BCHUSDT','BTCDOMUSDT','BNBUSDT','ARUSDT','BTCUSDT','ETHUSDT','SOLUSDT','SSVUSDT'])

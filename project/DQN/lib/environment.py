@@ -194,7 +194,7 @@ class Env(gym.Env):
         self.random_ofs_on_reset = random_ofs_on_reset
 
     def reset(self):
-        self._instrument = list(self._prices.keys())[0]
+        self._instrument = np.random.choice(list(self._prices.keys()))
         prices = self._prices[self._instrument]
 
         bars = self._state.bars_count
@@ -211,7 +211,7 @@ class Env(gym.Env):
         action = Actions(action_idx)
         reward, done= self._state.step(action)  # 這邊會更新步數
         obs = self._state.encode()  # 呼叫這裡的時候就會取得新的狀態
-        info = {}
+        info = {"instrument":self._instrument, "offset":self._state._offset}
         return obs, reward, done, info
 
     def render(self, mode='human', close=False):
