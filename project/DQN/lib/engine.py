@@ -42,7 +42,7 @@ class EngineBase():
         """
             change multiple model path  to  singl model path
         """
-        Meta_model_path = 'DQN\Meta\Meta-300B-30K.pt'
+        Meta_model_path = os.path.join('DQN','Meta','Meta-300B-30K.pt')        
 
         self.strategys = []
         for symbol in targetsymbols:                     
