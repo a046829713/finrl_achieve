@@ -27,7 +27,7 @@ class EngineBase():
         info,feature,data = model_path.split('-')
         feature_len = re.findall('\d+',feature)[0]
         data_len = re.findall('\d+',data)[0]    
-        strategytype,_,_ = info.split('\\')
+        strategytype,_,_ = info.split(os.sep)
 
         return Strategy(strategytype=strategytype,
                         symbol_name=symbol,
