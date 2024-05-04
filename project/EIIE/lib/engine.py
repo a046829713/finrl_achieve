@@ -23,15 +23,18 @@ class EngineBase():
             features=["close", "high", "low"]
         )
         self.last_order_info = self._performance(environment=environment)
-        # this is to stop EIIE,because i find it costs too much taxs and fees 
+        # this is to stop EIIE,because i find it costs too much taxs and fees
+        # [('Cash_asset', 0.10379037), ('ARUSDT', 0.3012763), ('BNBUSDT', 0.2963091), ('BTCDOMUSDT', 0.2986242)] 
         new_out_put = []
         for _each_key_value in self.last_order_info:
             _each_key_value = list(_each_key_value)
             if _each_key_value[0] == 'Cash_asset':
                 _each_key_value[1] = 0
             else:
-                _each_key_value[1] = 1 / (len(self.last_order_info) -1)
+                this_percent = 1 / (len(self.last_order_info) -1)
+                _each_key_value[1] = 0.25 if this_percent >0.25 else this_percent
             new_out_put.append(tuple(_each_key_value))
+
         self.last_order_info = new_out_put
 
     def _performance(self, environment: PortfolioOptimizationEnv):
