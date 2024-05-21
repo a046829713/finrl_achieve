@@ -12,4 +12,3 @@ def delete_pycache(dir_path):
 if __name__ == "__main__":
     # 假設你想從當前工作目錄開始刪除所有__pycache__文件夾
     delete_pycache('.')
-    print(123)

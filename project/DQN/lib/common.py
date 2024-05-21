@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import pandas as pd
 import time
-
+from utils.Debug_tool import debug
 
 
 class RewardTracker:
@@ -118,20 +118,27 @@ def calc_values_of_states(states, net, device="cpu"):
 
 
 def unpack_batch(batch):
-    states, actions, rewards, dones, last_states = [], [], [], [], []
+    states, actions, rewards, dones, last_states,infos,last_infos = [], [], [], [], [], [], []
     for exp in batch:
         state = np.array(exp.state, copy=False)
         states.append(state)
         actions.append(exp.action)
         rewards.append(exp.reward)
         dones.append(exp.last_state is None)
+        infos.append(exp.info)
+        last_infos.append(exp.last_info)
         if exp.last_state is None:
             last_states.append(state)       # the result will be masked anyway
         else:
             last_states.append(np.array(exp.last_state, copy=False))
     return np.array(states, copy=False), np.array(actions), np.array(rewards, dtype=np.float32), \
-        np.array(dones, dtype=np.uint8), np.array(last_states, copy=False)
+        np.array(dones, dtype=np.uint8), np.array(last_states, copy=False), np.array(infos, copy=False), np.array(last_infos, copy=False)
 
+def turn_to_tensor(infos,device):
+    # 使用 NumPy 快速處理
+    output_array = np.array([[info.get('postion', 0.0), info.get('diff_percent', 0.0)] for info in infos], dtype=np.float32)
+    output_tensor = torch.from_numpy(output_array).to(device)
+    return output_tensor 
 
 def calc_loss(batch, net, tgt_net, gamma, device="cpu"):
     """
@@ -142,23 +149,27 @@ def calc_loss(batch, net, tgt_net, gamma, device="cpu"):
          0.0687, -0.0173,  0.0859,  0.0522, -0.0125, -0.0301,  0.0224,  0.0628],
        device='cuda:0', grad_fn=<SqueezeBackward1>)
     """
-    states, actions, rewards, dones, next_states = unpack_batch(batch)
-    states_v = torch.tensor(states).to(device)        
+    states, actions, rewards, dones, next_states, infos, last_infos = unpack_batch(batch)
+    states_v = torch.tensor(states).to(device)
     next_states_v = torch.tensor(next_states).to(device)
     actions_v = torch.tensor(actions).to(device)
     rewards_v = torch.tensor(rewards).to(device)
     done_mask = torch.tensor(dones, dtype=torch.bool).to(device)
+    infos = turn_to_tensor(infos,device=device)
+    last_infos = turn_to_tensor(last_infos,device=device)
+
     state_action_values = net(states_v).gather(
         1, actions_v.unsqueeze(-1)).squeeze(-1)
-    next_state_actions = net(next_states_v).max(1)[1]    
-    next_state_values = tgt_net(next_states_v).gather(
-        1, next_state_actions.unsqueeze(-1)).squeeze(-1)   
-
-    next_state_values[done_mask] = 0.0
-
     
+    next_state_actions = net(next_states_v).max(1)[1]
+
+    next_state_values = tgt_net(next_states_v).gather(
+        1, next_state_actions.unsqueeze(-1)).squeeze(-1)
+    
+    next_state_values[done_mask] = 0.0
     # detach 單純的tensor 沒有grad_fn
-    expected_state_action_values = next_state_values.detach() * gamma + rewards_v
+    expected_state_action_values = next_state_values.detach() * gamma + rewards_v    
+    
     return nn.MSELoss()(state_action_values, expected_state_action_values)
 
 

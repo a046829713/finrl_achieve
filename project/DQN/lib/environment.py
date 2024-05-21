@@ -3,7 +3,7 @@ import gym.spaces
 import enum
 import numpy as np
 from utils.AppSetting import AppSetting
-
+import time
 
 setting = AppSetting.get_DQN_setting()
 
@@ -19,10 +19,10 @@ class State:
         assert isinstance(bars_count, int)
         assert bars_count > 0
         assert isinstance(commission_perc, float)
-        assert commission_perc >= 0.0                
+        assert commission_perc >= 0.0
 
         self.bars_count = bars_count
-        self.commission_perc = commission_perc        
+        self.commission_perc = commission_perc
         self.N_steps = 1000  # 這遊戲目前使用多少步學習
         self.model_train = model_train
 
@@ -36,6 +36,9 @@ class State:
         self.closecash = 0.0
         self.canusecash = 1.0
         self.game_steps = 0  # 這次遊戲進行了多久
+
+        # 用來記錄各個時間的
+        self.diff_percent = 0.0
 
     @property
     def shape(self):
@@ -94,7 +97,8 @@ class State:
         rel_close = self._prices.close[self._offset]
         return open * (1.0 + rel_close)
 
-    def step(self, action):
+
+    def step(self, action): 
         """
             重新設計
             最佳動作空間探索的獎勵函數
@@ -104,7 +108,9 @@ class State:
         Args:
             action (_type_): _description_
         """
-        assert isinstance(action, Actions)        
+        assert isinstance(action, Actions)
+
+
         reward = 0.0
         done = False
         close = self._cur_close()
@@ -143,10 +149,17 @@ class State:
         self.canusecash = 1.0 + self.cost_sum + self.closecash + opencash_diff
         reward += self.canusecash - last_canusecash
 
+        # 未平倉價格距離百分比
+        self.diff_percent = 0.0 if self.open_price == 0.0 else (self._cur_close() - self.open_price) / self.open_price
+
+
+
         # 新獎勵設計
         # print("目前部位",self.have_position,"單次手續費:",cost,"單次已平倉損益:",closecash_diff,"單次未平倉損益:", opencash_diff)
         # print("目前動作:",action,"總資金:",self.canusecash,"手續費用累積:",self.cost_sum,"累積已平倉損益:",self.closecash,"獎勵差:",reward)
         # print('*'*120)
+
+        # 上一個時步的狀態 ================================
 
         self._offset += 1
         self.game_steps += 1  # 本次遊戲次數
@@ -155,7 +168,33 @@ class State:
         if self.game_steps == self.N_steps and self.model_train:
             done = True
 
-        return reward, done
+        return reward, done, 
+
+
+class State_time_step(State):
+    """
+    State with shape suitable for 1D convolution
+    """
+    @property
+    def shape(self):
+        return (self.bars_count, 6)
+
+    def encode(self):
+        res = np.zeros(shape=self.shape, dtype=np.float32)
+        ofs = self.bars_count
+        for bar_idx in range(self.bars_count):
+            res[bar_idx][0] = self._prices.high[self._offset - ofs + bar_idx]
+            res[bar_idx][1] = self._prices.low[self._offset - ofs + bar_idx]
+            res[bar_idx][2] = self._prices.close[self._offset - ofs + bar_idx]
+            res[bar_idx][3] = self._prices.volume[self._offset - ofs + bar_idx]
+
+
+        if self.have_position:
+            res[:,4] = 1.0
+            res[:,5] = (self._cur_close() - self.open_price) / \
+                self.open_price            
+        
+        return res
 
 
 class State1D(State):
@@ -189,8 +228,10 @@ class Env(gym.Env):
         self._prices = prices
         self._state = state
         self.action_space = gym.spaces.Discrete(n=len(Actions))
+
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=self._state.shape, dtype=np.float32)
+
         self.random_ofs_on_reset = random_ofs_on_reset
 
     def reset(self):
@@ -202,16 +243,20 @@ class Env(gym.Env):
             offset = np.random.choice(prices.high.shape[0]-bars*10) + bars
         else:
             offset = bars
-
         print("目前步數:", offset)
         self._state.reset(prices, offset)
         return self._state.encode()
 
     def step(self, action_idx):
         action = Actions(action_idx)
-        reward, done= self._state.step(action)  # 這邊會更新步數
+        reward, done = self._state.step(action)  # 這邊會更新步數
         obs = self._state.encode()  # 呼叫這裡的時候就會取得新的狀態
-        info = {"instrument":self._instrument, "offset":self._state._offset}
+        info = {
+            "instrument": self._instrument,
+            "offset": self._state._offset,
+            "postion":float(self._state.have_position),
+            "diff_percent":self._state.diff_percent
+        }
         return obs, reward, done, info
 
     def render(self, mode='human', close=False):
@@ -219,3 +264,11 @@ class Env(gym.Env):
 
     def close(self):
         pass
+
+    def engine_info(self):
+        if self._state.__class__ == State_time_step:
+            return {
+                "input_size": self._state.shape[1],
+                "hidden_size":128,
+                "add_feature":2
+            }

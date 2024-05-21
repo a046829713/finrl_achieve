@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 from . import actions
 import time
-
+from DQN.lib.common import turn_to_tensor
 
 class BaseAgent:
     """
@@ -38,9 +38,9 @@ class BaseAgent:
 
 def default_states_preprocessor(states):
     """
-    Convert list of states into the form suitable for model. By default we assume Variable
-    :param states: list of numpy arrays with states
-    :return: Variable
+        Convert list of states into the form suitable for model. By default we assume Variable
+        :param states: list of numpy arrays with states
+        :return: Variable
     """
     if len(states) == 1:
         np_states = np.expand_dims(states[0], 0)
@@ -81,7 +81,7 @@ class DQNAgent(BaseAgent):
         self.preprocessor = preprocessor
         self.device = device
 
-    def __call__(self, states, agent_states=None):
+    def __call__(self, states, agent_states=None,info =None):
         if agent_states is None:
             agent_states = [None] * len(states)
 
@@ -89,12 +89,12 @@ class DQNAgent(BaseAgent):
             states = self.preprocessor(states)
             if torch.is_tensor(states):
                 states = states.to(self.device)
-        
+
+        # info = turn_to_tensor(info,self.device)
+        # print("進入前info:",info)
         q_v = self.dqn_model(states)
         q = q_v.data.cpu().numpy()
-        # actions = self.action_selector(q,marketpositions)
         actions = self.action_selector(q)
-
         return actions, agent_states
 
 

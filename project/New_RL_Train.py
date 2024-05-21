@@ -1,5 +1,5 @@
 from DQN.lib import environment, models, common
-from DQN.lib.environment import State1D
+from DQN.lib.environment import State1D, State_time_step
 import os
 import numpy as np
 import torch
@@ -9,16 +9,17 @@ from DQN.lib.DataFeature import DataFeature
 from datetime import datetime
 from tensorboardX import SummaryWriter
 import time
+from DQN.lib import models_transformer
+
 
 class RL_Train():
     def prepare_data(self):
         return DataFeature().get_train_net_work_data_by_path(self.symbols)
 
-
-    def __init__(self,symbols:list) -> None:
+    def __init__(self, symbols: list) -> None:
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
-        self.symbols = list(set(symbols)) # 避免重複
+        self.symbols = list(set(symbols))  # 避免重複
 
         # 設定檔
         # setting = AppSetting.get_DQN_setting()
@@ -27,29 +28,46 @@ class RL_Train():
         self.hyperparameters()
         data = self.prepare_data()
 
-
-
         self.writer = SummaryWriter(
             log_dir=os.path.join(
                 'C:\\', 'runs', datetime.strftime(
                     datetime.now(), "%Y%m%d-%H%M%S") + '-conv-'))
 
         # 準備神經網絡的狀態
-        state = State1D(bars_count=self.BARS_COUNT,
-                        commission_perc=self.MODEL_DEFAULT_COMMISSION_PERC,                        
-                        model_train=True
-                        )
+        state = State_time_step(bars_count=self.BARS_COUNT,
+                                commission_perc=self.MODEL_DEFAULT_COMMISSION_PERC,
+                                model_train=True
+                                )
         # 製作環境
         train_env = environment.Env(
             prices=data, state=state, random_ofs_on_reset=True)
 
+        engine_info = train_env.engine_info()
 
         # 準備模型
-        self.net = models.DQNConv1D_Large(train_env.observation_space.shape,
-                                    train_env.action_space.n).to(self.device)
+        # input_size, hidden_size, output_size, num_layers=1
+        # self.net = models.SimpleLSTM(
+        #     input_size = engine_info['input_size'],
+        #     hidden_size = engine_info['hidden_size'],
+        #     add_feature_size = engine_info['add_feature'],
+        #     output_size = train_env.action_space.n,
+        #     num_layers=2).to(self.device)
+        # Example of creating a model with specific parameters
+        # model = TransformerModel(input_dim=1, head_size=64, num_heads=4, ff_dim=256,
+        #                         num_trans_blocks=3, mlp_units=[64, 32], dropout=0.1, mlp_dropout=0.1)
+        # print(model)
+
+        self.net = models_transformer.TransformerDuelingModel(
+            input_dim=engine_info['input_size'],
+            num_heads=2,
+            ff_dim=256,
+            num_trans_blocks=3,
+            num_actions=train_env.action_space.n,  # 假设有5种可能的动作
+            hidden_size=1024,  # 使用隐藏层
+            dropout=0.1  # 适度的dropout以防过拟合
+        ).to(self.device)
 
         self.tgt_net = ptan.agent.TargetNet(self.net)
-
         # 貪婪的選擇器
         self.selector = ptan.actions.EpsilonGreedyActionSelector(
             self.EPSILON_START)
@@ -61,7 +79,7 @@ class RL_Train():
             train_env, agent, self.GAMMA, steps_count=self.REWARD_STEPS)
 
         self.buffer = ptan.experience.ExperienceReplayBuffer(
-            self.exp_source, self.REPLAY_SIZE,len(self.symbols))
+            self.exp_source, self.REPLAY_SIZE, len(self.symbols))
 
         self.optimizer = optim.Adam(
             self.net.parameters(), lr=self.LEARNING_RATE)
@@ -108,21 +126,17 @@ class RL_Train():
                 if new_rewards:
                     reward_tracker.reward(
                         new_rewards[0], self.step_idx, self.selector.epsilon)
-                
-                if not(self.buffer.each_num_len_enough(self.REPLAY_INITIAL)):
+
+                if not (self.buffer.each_num_len_enough(self.REPLAY_INITIAL)):
                     continue
-                
+
                 self.optimizer.zero_grad()
                 batch = self.buffer.sample(self.BATCH_SIZE)
-
                 loss_v = common.calc_loss(
                     batch, self.net, self.tgt_net.target_model, self.GAMMA ** self.REWARD_STEPS, device=self.device)
-
-
                 if self.step_idx % self.WRITER_EVERY_STEP == 0:
                     self.writer.add_scalar(
                         "Loss_Value", loss_v.item(), self.step_idx)
-
                 loss_v.backward()
                 self.optimizer.step()
 
@@ -141,14 +155,14 @@ class RL_Train():
                     }
                     self.save_checkpoint(checkpoint, os.path.join(
                         self.saves_path, f"checkpoint-{idx}.pt"))
-                    
+
                 # if self.step_idx > self.terminate_times:
                 #     break
 
     def hyperparameters(self):
         self.BARS_COUNT = 300  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
         self.GAMMA = 0.99
-        self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100 
+        self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100
         self.REWARD_STEPS = 2
         self.REPLAY_SIZE = 50000
         self.REPLAY_INITIAL = 1000
@@ -166,11 +180,13 @@ class RL_Train():
         self.BATCH_SIZE = 32  # 每次要從buffer提取的資料筆數,用來給神經網絡更新權重
         self.STATES_TO_EVALUATE = 10000  # 每次驗證一萬筆資料
         self.terminate_times = 8000000
-        
+
     def save_checkpoint(self, state, filename):
         # 保存檢查點的函數
         torch.save(state, filename)
 
+
 # 我認為可以訓練出通用的模型了
 # 多數據供應
-RL_Train(symbols=['BCHUSDT','BTCDOMUSDT','BNBUSDT','ARUSDT','BTCUSDT','ETHUSDT','SOLUSDT','SSVUSDT'])
+# RL_Train(symbols=['BCHUSDT','BTCDOMUSDT','BNBUSDT','ARUSDT','BTCUSDT','ETHUSDT','SOLUSDT','SSVUSDT'])
+RL_Train(symbols=['BTCUSDT'])

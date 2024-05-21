@@ -66,22 +66,23 @@ class debug():
         """
         def wrapper(*args, **kwargs):
             debug._counts += 1
-
             begin_time = time()
             result = func(*args, **kwargs)  
             end_time = time()            
             elapsed_time = end_time - begin_time
             countMap = debug._count_map
             if func.__name__ in countMap:
-                countMap[func.__name__] += elapsed_time
+                countMap[func.__name__]['time'] += elapsed_time
+                countMap[func.__name__]['use_count'] +=1
             else:
-                countMap[func.__name__] = elapsed_time
+                countMap[func.__name__]= {}
+                countMap[func.__name__].update({'time':elapsed_time})
+                countMap[func.__name__].update({'use_count':1})
             
             if debug._counts % 1000 == 0:
                 print(countMap) 
                 print('*'*120)
             return result
-
         return wrapper
     
 

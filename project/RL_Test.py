@@ -27,7 +27,7 @@ def creaet_strategy(model_path:str,symbol:str):
     strategy.load_data(local_data_path=f'DQN\simulation\data\{symbol}-F-{data_len}-Min.csv')
     return strategy
 
-strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='ETHUSDT')
+strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='BTCUSDT')
 
 re_evaluate = RL_evaluate(strategy) 
 Backtest(re_evaluate, strategy).order_becktest(
