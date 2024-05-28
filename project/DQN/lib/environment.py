@@ -151,9 +151,6 @@ class State:
 
         # 未平倉價格距離百分比
         self.diff_percent = 0.0 if self.open_price == 0.0 else (self._cur_close() - self.open_price) / self.open_price
-
-
-
         # 新獎勵設計
         # print("目前部位",self.have_position,"單次手續費:",cost,"單次已平倉損益:",closecash_diff,"單次未平倉損益:", opencash_diff)
         # print("目前動作:",action,"總資金:",self.canusecash,"手續費用累積:",self.cost_sum,"累積已平倉損益:",self.closecash,"獎勵差:",reward)
@@ -269,6 +266,4 @@ class Env(gym.Env):
         if self._state.__class__ == State_time_step:
             return {
                 "input_size": self._state.shape[1],
-                "hidden_size":128,
-                "add_feature":2
             }

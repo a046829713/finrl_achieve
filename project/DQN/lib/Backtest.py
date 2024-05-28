@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import quantstats as qs
 from pathlib import Path
 import time
-from DQN.lib import models_transformer
+from DQN.lib import offical_transformer
 
 
 class Strategy(object):
@@ -54,7 +54,17 @@ class Strategy(object):
         self.df = pd.read_csv(local_data_path)
         self.df.set_index("Datetime", inplace=True)
 
+    def load_Real_time_data(self, df: pd.DataFrame):
+        self.df = df[['date', 'close', 'high', 'low', 'open', 'volume']].copy()
+        self.df.rename(columns={"date": 'Datetime',
+                                'open': 'Open',
+                                "high": "High",
+                                "low": "Low",
+                                "close": "Close",
+                                'volume': 'Volume'
+                                }, inplace=True)
 
+        self.df.set_index('Datetime', inplace=True)
 
     def _strategy_name(self):
         return f"{self.strategytype}-{self.symbol_name}-{self.freq_time}"
@@ -88,13 +98,14 @@ class RL_evaluate():
         engine_info = self.evaluate_env.engine_info()
         # 準備模型
         # input_size, hidden_size, output_size, num_layers=1
-        model = models_transformer.TransformerDuelingModel(
-            input_dim=engine_info['input_size'],
-            num_heads=2,
-            ff_dim=256,
-            num_trans_blocks=3,
+        model = offical_transformer.TransformerDuelingModel(
+            d_model=engine_info['input_size'],
+            nhead=2,
+            d_hid=256,
+            nlayers=1,
             num_actions=self.evaluate_env.action_space.n,  # 假设有5种可能的动作
             hidden_size=1024,  # 使用隐藏层
+            seq_dim=self.BARS_COUNT,
             dropout=0.1  # 适度的dropout以防过拟合
         ).to(self.device)
 
@@ -114,23 +125,19 @@ class RL_evaluate():
         state = torch.from_numpy(obs).to(self.device)
         state = state.unsqueeze(0)
 
-        info = common.turn_to_tensor(info,self.device)
-        while not done:       
+        info = common.turn_to_tensor(info, self.device)
+        while not done:
             action = self.agent(state)
             action_idx = action.max(dim=1)[1].item()
-            if action_idx == 1:
-                print(action_idx)
-                print('*'*120)
             record_orders.append(self._parser_order(action_idx))
             _state, reward, done, info = self.evaluate_env.step(action_idx)
             # info = common.turn_to_tensor([info],self.device)
             state = torch.from_numpy(_state).to(self.device)
             state = state.unsqueeze(0)
             rewards.append(reward)
-
         self.record_orders = record_orders
-        print(self.record_orders)
-        
+
+
     def hyperparameters(self, strategy):
         self.BARS_COUNT = strategy.model_feature_len  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
         self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100
@@ -202,24 +209,24 @@ class Backtest(object):
 
         if ifplot:
             self.plot_max_drawdown(ClosedPostionprofit_array)
-            self.detail_image(ClosedPostionprofit_array,orders)
+            self.detail_image(ClosedPostionprofit_array, orders)
 
         return {"marketpostion_array": marketpostion_array}
 
     def detail_image(self, ClosedPostionprofit_array, orders):
         self._plot_and_save(ClosedPostionprofit_array,
                             save_path=self._results_file,
-                            ylabel = 'closed_position_profit',
-                            title = 'Closed Position Profit',
+                            ylabel='closed_position_profit',
+                            title='Closed Position Profit',
                             file_name='closed_position_profit.png')
-        
+
         self._plot_and_save(orders,
                             save_path=self._results_file,
-                            ylabel = 'orders',
-                            title = 'orders',
+                            ylabel='orders',
+                            title='orders',
                             file_name='orders.png')
 
-    def _plot_and_save(self, data, save_path, ylabel:str, title:str, file_name:str):
+    def _plot_and_save(self, data, save_path, ylabel: str, title: str, file_name: str):
         index = pd.to_datetime(
             self.Symbol_data.index[self.bars_count:-1])  # 转换为DatetimeIndex
         data_series = pd.Series(data,

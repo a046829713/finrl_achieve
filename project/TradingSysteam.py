@@ -188,6 +188,7 @@ class AsyncTrading_system(Trading_system):
 
         print("目前交易商品:",self.targetsymbols)
 
+
     def check_money_level(self):
         """
             取得實時運作的資金水位
@@ -260,9 +261,9 @@ class AsyncTrading_system(Trading_system):
                         self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'])
 
 
-                    print(finally_df)
+                    # 在底層(oderbacktest會將最後一個拋棄)
                     if_order_map = self.DQN_engin.get_if_order_map(finally_df)
-                    
+                    print(if_order_map)
                     
                     finally_df = self.dataprovider.datatransformer.filter_last_time_series(
                         finally_df)
