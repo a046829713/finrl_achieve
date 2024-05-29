@@ -49,6 +49,7 @@ class TransformerDuelingModel(nn.Module):
         super().__init__()
         self.batch_first = batch_first
         self.pos_encoder = PositionalEncoding(d_model, dropout)
+        
         encoder_layers = TransformerEncoderLayer(
             d_model, nhead, d_hid, dropout, batch_first=self.batch_first)
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)

@@ -15,16 +15,20 @@ class EngineBase():
         self.policy = self.policy.to(self.policy.device)
 
     def work(self, df: pd.DataFrame):
-        environment = PortfolioOptimizationEnv(
-            df,
-            initial_amount=50000,
-            comission_fee_pct=0.0025,
-            time_window=50,
-            features=["close", "high", "low"]
-        )
-        self.last_order_info = self._performance(environment=environment)
+        # environment = PortfolioOptimizationEnv(
+        #     df,
+        #     initial_amount=50000,
+        #     comission_fee_pct=0.0025,
+        #     time_window=50,
+        #     features=["close", "high", "low"]
+        # )
+        # self.last_order_info = self._performance(environment=environment)
         # this is to stop EIIE,because i find it costs too much taxs and fees
         # [('Cash_asset', 0.10379037), ('ARUSDT', 0.3012763), ('BNBUSDT', 0.2963091), ('BTCDOMUSDT', 0.2986242)] 
+
+        self.last_order_info =[('Cash_asset',0)] + [(each_symbol,0)for each_symbol in list(set(df['tic'].to_list()))]
+        print("舊的:",self.last_order_info)
+
         new_out_put = []
         for _each_key_value in self.last_order_info:
             _each_key_value = list(_each_key_value)
@@ -36,6 +40,7 @@ class EngineBase():
             new_out_put.append(tuple(_each_key_value))
 
         self.last_order_info = new_out_put
+        print("新的:",self.last_order_info)
 
     def _performance(self, environment: PortfolioOptimizationEnv):
         """
