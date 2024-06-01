@@ -47,8 +47,8 @@ class RL_Train():
         self.net = offical_transformer.TransformerDuelingModel(
             d_model=engine_info['input_size'],
             nhead=2,
-            d_hid=256,
-            nlayers=1,
+            d_hid=2048,
+            nlayers=3,
             num_actions=train_env.action_space.n,  # 假设有5种可能的动作
             hidden_size=1024,  # 使用隐藏层
             seq_dim = self.BARS_COUNT,
@@ -153,7 +153,7 @@ class RL_Train():
         self.GAMMA = 0.99
         self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100
         self.REWARD_STEPS = 2
-        self.REPLAY_SIZE = 50000 * len(self.symbols)
+        self.REPLAY_SIZE = 200000
         self.REPLAY_INITIAL = 10000
         self.LEARNING_RATE = 0.0001  # optim 的學習率
         self.EPSILON_START = 1.0  # 起始機率(一開始都隨機運行)
