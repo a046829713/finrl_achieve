@@ -48,9 +48,9 @@ class RL_Train():
             d_model=engine_info['input_size'],
             nhead=2,
             d_hid=2048,
-            nlayers=3,
+            nlayers=1,
             num_actions=train_env.action_space.n,  # 假设有5种可能的动作
-            hidden_size=1024,  # 使用隐藏层
+            hidden_size=64,  # 使用隐藏层
             seq_dim = self.BARS_COUNT,
             dropout=0.1  # 适度的dropout以防过拟合
         ).to(self.device)
@@ -153,7 +153,7 @@ class RL_Train():
         self.GAMMA = 0.99
         self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100
         self.REWARD_STEPS = 2
-        self.REPLAY_SIZE = 200000
+        self.REPLAY_SIZE = 100000
         self.REPLAY_INITIAL = 10000
         self.LEARNING_RATE = 0.0001  # optim 的學習率
         self.EPSILON_START = 1.0  # 起始機率(一開始都隨機運行)
@@ -177,5 +177,5 @@ class RL_Train():
 
 # 我認為可以訓練出通用的模型了
 # 多數據供應
-RL_Train(symbols=['BCHUSDT','BTCDOMUSDT','BNBUSDT','ARUSDT','BTCUSDT','ETHUSDT','SOLUSDT','SSVUSDT'])
-# RL_Train(symbols=['BTCUSDT'])
+# RL_Train(symbols=['ENSUSDT','LPTUSDT','GMXUSDT','TRBUSDT','ARUSDT','XMRUSDT','ETHUSDT', 'AAVEUSDT',  'ZECUSDT', 'SOLUSDT', 'DEFIUSDT', 'BTCUSDT',  'ETCUSDT',  'BNBUSDT', 'LTCUSDT', 'BCHUSDT'])
+RL_Train(symbols=['BTCUSDT'])

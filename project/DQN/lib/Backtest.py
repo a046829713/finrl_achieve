@@ -101,14 +101,14 @@ class RL_evaluate():
         model = offical_transformer.TransformerDuelingModel(
             d_model=engine_info['input_size'],
             nhead=2,
-            d_hid=256,
+            d_hid=2048,
             nlayers=1,
             num_actions=self.evaluate_env.action_space.n,  # 假设有5种可能的动作
-            hidden_size=1024,  # 使用隐藏层
-            seq_dim=self.BARS_COUNT,
+            hidden_size=64,  # 使用隐藏层
+            seq_dim = self.BARS_COUNT,
             dropout=0.1  # 适度的dropout以防过拟合
         ).to(self.device)
-
+        
         checkpoint = torch.load(
             model_path, map_location=self.device)
 

@@ -81,7 +81,6 @@ class State:
         if not self.have_position:
             res[shift] = 0.0
         else:
-            # 其實我覺得丟這個進去,好像沒什麼用
             res[shift] = (self._cur_close() - self.open_price) / \
                 self.open_price
 
@@ -170,7 +169,6 @@ class State:
 
 class State_time_step(State):
     """
-    State with shape suitable for 1D convolution
     """
     @property
     def shape(self):

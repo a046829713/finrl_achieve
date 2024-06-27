@@ -6,8 +6,10 @@ import os
 import time
 
 class EngineBase():
-    def __init__(self) -> None:        
-        self.setting = AppSetting.get_DQN_setting()        
+    def __init__(self) -> None:
+        self.symbols = ['BTCUSDT']        
+        self.setting = AppSetting.get_DQN_setting()
+        self.strategy_prepare()
 
     def get_if_order_map(self, df: pd.DataFrame) -> dict:
         if_order_map = {}
@@ -23,12 +25,12 @@ class EngineBase():
             if_order_map[each_strategy.symbol_name] = info['marketpostion_array'][-1]
         return if_order_map
     
-    def creaet_strategy(self,model_path:str,symbol:str):
+    def creaet_strategy(self,model_path:str):
         info,feature,data = model_path.split('-')
         feature_len = re.findall('\d+',feature)[0]
         data_len = re.findall('\d+',data)[0]    
-        strategytype,_,_ = info.split(os.sep)
-
+        strategytype,_,symbol = info.split(os.sep)
+        
         return Strategy(strategytype=strategytype,
                         symbol_name=symbol,
                         freq_time=int(data_len),
@@ -38,12 +40,20 @@ class EngineBase():
                         model_count_path=model_path,
                         formal=True)
         
-    def strategy_prepare(self, targetsymbols):
-        """
-            change multiple model path  to  singl model path
-        """
-        Meta_model_path = os.path.join('DQN','Meta','Meta-300B-30K.pt')        
+    
+    def strategy_prepare(self):
+        # 設定你想查看的資料夾路徑
+        folder_path = os.path.join('DQN','Meta')
+
+        # 獲取資料夾中的所有檔案和子資料夾名稱
+        files_and_dirs = os.listdir(folder_path)
+
+        # 如果你只想獲取檔案，排除子資料夾，你可以使用以下代碼
+        model_files = [os.path.join(folder_path,f) for f in files_and_dirs if os.path.isfile(os.path.join(folder_path, f))]
 
         self.strategys = []
-        for symbol in targetsymbols:                     
-            self.strategys.append(self.creaet_strategy(Meta_model_path, symbol=symbol))
+        for symbol in self.symbols:
+            # 模型路徑
+            for model_path in model_files:
+                if symbol in model_path:            
+                    self.strategys.append(self.creaet_strategy(model_path))

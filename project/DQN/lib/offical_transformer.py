@@ -1,12 +1,7 @@
 import math
-import os
-from tempfile import TemporaryDirectory
-from typing import Tuple
-
 import torch
 from torch import nn, Tensor
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
-from torch.utils.data import dataset
 import time
 
 # 可能的構想
@@ -48,10 +43,10 @@ class TransformerDuelingModel(nn.Module):
                  batch_first=True):
         super().__init__()
         self.batch_first = batch_first
-        self.pos_encoder = PositionalEncoding(d_model, dropout)
+        self.pos_encoder = PositionalEncoding(hidden_size, dropout)
         
         encoder_layers = TransformerEncoderLayer(
-            d_model, nhead, d_hid, dropout, batch_first=self.batch_first)
+            hidden_size, nhead, d_hid, dropout, batch_first=self.batch_first)
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
 
         # 狀態值網絡
@@ -70,10 +65,18 @@ class TransformerDuelingModel(nn.Module):
         )
 
         self.linear = nn.Sequential(
-            nn.Linear(d_model, hidden_size),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, 1)
         )
+
+        # 將資料映射
+        self.embedding = nn.Sequential(
+            nn.Linear(d_model, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size)
+        )
+
 
     def forward(self, src: Tensor) -> Tensor:
         """
@@ -82,7 +85,10 @@ class TransformerDuelingModel(nn.Module):
 
         Returns:
             output Tensor of shape ``[batch_size, num_actions]``
+            
         """
+        src = self.embedding(src)
+        
         # src = torch.Size([1, 300, 6])
         if self.batch_first:
             src = self.pos_encoder(src.transpose(0, 1))
@@ -91,6 +97,7 @@ class TransformerDuelingModel(nn.Module):
 
         if self.batch_first:
             output = self.transformer_encoder(src.transpose(0, 1))
+            
         else:
             output = self.transformer_encoder(src)
 
