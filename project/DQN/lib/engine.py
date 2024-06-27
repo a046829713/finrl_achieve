@@ -22,6 +22,7 @@ class EngineBase():
             info = Backtest(re_evaluate, each_strategy).order_becktest(
                 re_evaluate.record_orders, ifplot=False)
 
+            print(info)
             if_order_map[each_strategy.symbol_name] = info['marketpostion_array'][-1]
         return if_order_map
     
