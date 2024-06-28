@@ -51,7 +51,7 @@ def creaet_strategy(model_path:str):
     return strategy
 
 
-strategy = creaet_strategy('DQN\Meta\BTCUSDT-300B-30K.pt')
+strategy = creaet_strategy('DQN\Meta\BNBUSDT-300B-30K.pt')
 re_evaluate = RL_evaluate(strategy) 
 
 

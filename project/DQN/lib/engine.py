@@ -7,7 +7,7 @@ import time
 
 class EngineBase():
     def __init__(self) -> None:
-        self.symbols = ['BTCUSDT']        
+        self.symbols = ['BTCUSDT','BNBUSDT']        
         self.setting = AppSetting.get_DQN_setting()
         self.strategy_prepare()
 

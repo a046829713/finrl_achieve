@@ -84,10 +84,8 @@ class RL_Train():
             self.saves_path = os.path.join(saves_path[0], saves_path[1])
             checkpoint = torch.load(checkpoint_path)
             self.net.load_state_dict(checkpoint['model_state_dict'])
-            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            self.step_idx = checkpoint['step_idx']
-            self.best_mean_val = checkpoint['best_mean_val']
-
+            self.step_idx = self.EPSILON_STEPS * 0.
+            
         else:
             print("建立新的儲存點")
             # 用來儲存的位置
@@ -96,7 +94,7 @@ class RL_Train():
 
             os.makedirs(self.saves_path, exist_ok=True)
             self.step_idx = 0
-            self.best_mean_val = None
+            
 
     def train(self):
         with common.RewardTracker(self.writer, np.inf, group_rewards=2) as reward_tracker:
@@ -137,10 +135,9 @@ class RL_Train():
                     idx = self.step_idx // self.CHECKPOINT_EVERY_STEP
                     checkpoint = {
                         'step_idx': self.step_idx,
-                        'model_state_dict': self.net.state_dict(),
-                        'optimizer_state_dict': self.optimizer.state_dict(),
+                        'model_state_dict': self.net.state_dict(),                
                         'selector_state': self.selector.epsilon,
-                        'best_mean_val': self.best_mean_val,
+                        
                     }
                     self.save_checkpoint(checkpoint, os.path.join(
                         self.saves_path, f"checkpoint-{idx}.pt"))
@@ -177,5 +174,5 @@ class RL_Train():
 
 # 我認為可以訓練出通用的模型了
 # 多數據供應
-# RL_Train(symbols=['ENSUSDT','LPTUSDT','GMXUSDT','TRBUSDT','ARUSDT','XMRUSDT','ETHUSDT', 'AAVEUSDT',  'ZECUSDT', 'SOLUSDT', 'DEFIUSDT', 'BTCUSDT',  'ETCUSDT',  'BNBUSDT', 'LTCUSDT', 'BCHUSDT'])
-RL_Train(symbols=['BTCUSDT'])
+# RL_Train(symbols=['ENSUSDT','LPTUSDT','GMXUSDT','TRBUSDT','ARUSDT','XMRUSDT','ETHUSDT', 'AAVEUSDT',  'ZECUSDT', 'SOLUSDT', 'DEFIUSDT',  'ETCUSDT', 'LTCUSDT', 'BCHUSDT'])
+RL_Train(symbols=['ETHUSDT'])
