@@ -129,6 +129,7 @@ class State:
             # 記錄開盤價
             self.open_price = close * (1 + setting['DEFAULT_SLIPPAGE'])
             cost = -self.commission_perc
+            reward += 0.001  # 可以考虑动态调整或基于条件的奖励
 
         elif action == Actions.Sell and self.have_position:
             cost = -self.commission_perc
@@ -138,6 +139,7 @@ class State:
                 close * (1 - setting['DEFAULT_SLIPPAGE']) - self.open_price) / self.open_price
             self.open_price = 0.0
             opencash_diff = 0.0
+            reward += 0.001  # 可以考虑动态调整或基于条件的奖励
 
         # 原始獎勵設計
         # reward += cost + closecash_diff + opencash_diff

@@ -90,6 +90,7 @@ class DQNAgent(BaseAgent):
             if torch.is_tensor(states):
                 states = states.to(self.device)
 
+        # 有保留info合併類別的，但是目前沒有影響
         # info = turn_to_tensor(info,self.device)
         # print("進入前info:",info)
         q_v = self.dqn_model(states)

@@ -98,11 +98,11 @@ class RL_evaluate():
         engine_info = self.evaluate_env.engine_info()
         # 準備模型
         # input_size, hidden_size, output_size, num_layers=1
-        model = offical_transformer.TransformerDuelingModel(
+        model  = offical_transformer.TransformerDuelingModel(
             d_model=engine_info['input_size'],
             nhead=2,
             d_hid=2048,
-            nlayers=1,
+            nlayers=4,
             num_actions=self.evaluate_env.action_space.n,  # 假设有5种可能的动作
             hidden_size=64,  # 使用隐藏层
             seq_dim = self.BARS_COUNT,
@@ -135,8 +135,9 @@ class RL_evaluate():
             state = torch.from_numpy(_state).to(self.device)
             state = state.unsqueeze(0)
             rewards.append(reward)
+        
         self.record_orders = record_orders
-
+        
 
     def hyperparameters(self, strategy):
         self.BARS_COUNT = strategy.model_feature_len  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒

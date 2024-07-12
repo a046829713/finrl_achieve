@@ -48,12 +48,14 @@ class RL_Train():
             d_model=engine_info['input_size'],
             nhead=2,
             d_hid=2048,
-            nlayers=1,
+            nlayers=4,
             num_actions=train_env.action_space.n,  # 假设有5种可能的动作
             hidden_size=64,  # 使用隐藏层
             seq_dim = self.BARS_COUNT,
             dropout=0.1  # 适度的dropout以防过拟合
         ).to(self.device)
+
+        self.count_parameters(self.net)
 
         self.tgt_net = ptan.agent.TargetNet(self.net)
         # 貪婪的選擇器
@@ -84,8 +86,7 @@ class RL_Train():
             self.saves_path = os.path.join(saves_path[0], saves_path[1])
             checkpoint = torch.load(checkpoint_path)
             self.net.load_state_dict(checkpoint['model_state_dict'])
-            self.step_idx = self.EPSILON_STEPS * 0.
-            
+            self.step_idx = checkpoint['step_idx']
         else:
             print("建立新的儲存點")
             # 用來儲存的位置
@@ -125,8 +126,11 @@ class RL_Train():
                     self.writer.add_scalar(
                         "Loss_Value", loss_v.item(), self.step_idx)
                 loss_v.backward()
-                self.optimizer.step()
 
+                if self.step_idx % self.checkgrad_times == 0:
+                    self.checkgrad()
+                
+                self.optimizer.step()
                 if self.step_idx % self.TARGET_NET_SYNC == 0:
                     self.tgt_net.sync()
 
@@ -144,7 +148,14 @@ class RL_Train():
 
                 # if self.step_idx > self.terminate_times:
                 #     break
-
+    
+    def checkgrad(self):
+        # 打印梯度統計數據
+        for name, param in self.net.named_parameters():
+            if param.grad is not None:
+                print(f"Layer: {name}, Grad Min: {param.grad.min()}, Grad Max: {param.grad.max()}, Grad Mean: {param.grad.mean()}")
+        print('*'*120)
+    
     def hyperparameters(self):
         self.BARS_COUNT = 300  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
         self.GAMMA = 0.99
@@ -166,13 +177,20 @@ class RL_Train():
         self.BATCH_SIZE = 32  # 每次要從buffer提取的資料筆數,用來給神經網絡更新權重
         self.STATES_TO_EVALUATE = 10000  # 每次驗證一萬筆資料
         self.terminate_times = 8000000
-
+        self.checkgrad_times = 1000 
+    
     def save_checkpoint(self, state, filename):
         # 保存檢查點的函數
         torch.save(state, filename)
 
-
+    # 計算參數數量
+    def count_parameters(self,model):
+        data = [p.numel() for p in model.parameters() if p.requires_grad]
+        sum_numel = sum(data)
+        print("總參數數量:",sum_numel)
+        return sum_numel
+    
 # 我認為可以訓練出通用的模型了
 # 多數據供應
-# RL_Train(symbols=['ENSUSDT','LPTUSDT','GMXUSDT','TRBUSDT','ARUSDT','XMRUSDT','ETHUSDT', 'AAVEUSDT',  'ZECUSDT', 'SOLUSDT', 'DEFIUSDT',  'ETCUSDT', 'LTCUSDT', 'BCHUSDT'])
-RL_Train(symbols=['ETHUSDT'])
+# RL_Train(symbols=[])
+RL_Train(symbols=['BTCUSDT','ENSUSDT','LPTUSDT','GMXUSDT','TRBUSDT','ARUSDT','XMRUSDT','ETHUSDT', 'AAVEUSDT',  'ZECUSDT', 'SOLUSDT', 'DEFIUSDT',  'ETCUSDT', 'LTCUSDT', 'BCHUSDT'])
