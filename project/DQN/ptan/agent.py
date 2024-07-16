@@ -45,14 +45,13 @@ def default_states_preprocessor(states):
     if len(states) == 1:
         np_states = np.expand_dims(states[0], 0)
     else:
-        np_states = np.array([np.array(s, copy=False)
-                             for s in states], copy=False)
+        np_states = np.array([np.array(s, copy=False) for s in states], copy=False)
+        print("測試進入:",np_states)
+        time.sleep(100)
     return torch.tensor(np_states)
 
 
-def float32_preprocessor(states):
-    np_states = np.array(states, dtype=np.float32)
-    return torch.tensor(np_states)
+
 
 
 class DQNAgent(BaseAgent):
@@ -61,7 +60,7 @@ class DQNAgent(BaseAgent):
     from the observations and  converts them into the actions using action_selector
     """
 
-    def __init__(self, dqn_model, action_selector, device="cpu", preprocessor=default_states_preprocessor):
+    def __init__(self, dqn_model, action_selector, device="cpu"):
         """
         初始化方法接受以下參數：
         dqn_model: 一個模型，用於預測給定狀態下每個可能行動的價值。
@@ -77,11 +76,11 @@ class DQNAgent(BaseAgent):
         """
 
         self.dqn_model = dqn_model
-        self.action_selector = action_selector
-        self.preprocessor = preprocessor
+        self.action_selector = action_selector        
+        self.preprocessor = default_states_preprocessor        
         self.device = device
 
-    def __call__(self, states, agent_states=None,info =None):
+    def __call__(self, states, agent_states=None, info =None):
         if agent_states is None:
             agent_states = [None] * len(states)
 

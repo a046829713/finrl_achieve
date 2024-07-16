@@ -141,8 +141,7 @@ class RL_evaluate():
 
     def hyperparameters(self, strategy):
         self.BARS_COUNT = strategy.model_feature_len  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
-        self.MODEL_DEFAULT_COMMISSION_PERC = 0.002  # 後來決定不要乘上100
-        self.REWARD_ON_CLOSE = False  # 結束之後才給獎勵
+        self.MODEL_DEFAULT_COMMISSION_PERC = 0.0005
 
     def _parser_order(self, action_value: int):
         if action_value == 2:

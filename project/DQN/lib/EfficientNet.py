@@ -77,9 +77,9 @@ class InvertedResidual(nn.Module):
             x += residual
         return x
 
-class CustomEfficientNetB3(nn.Module):
+class EfficientNetB3(nn.Module):
     def __init__(self, actions_n):
-        super(CustomEfficientNetB3, self).__init__()
+        super(EfficientNetB3, self).__init__()
 
         # Stem
         self.conv_stem = nn.Conv2d(in_channels=1, out_channels=40, kernel_size=3, stride=2, padding=1, bias=False)
@@ -165,7 +165,7 @@ class CustomEfficientNetB3(nn.Module):
 # 創建自訂義 EfficientNet-B3 模型
 # input_shape = (1, 6, 300)  # 假設新的輸入張量尺寸
 # num_classes = 3
-# model = CustomEfficientNetB3(num_classes)
+# model = EfficientNetB3(num_classes)
 
 # 打印修改後的模型結構
 # print(model)

@@ -5,9 +5,6 @@ from torch.nn import TransformerEncoder
 from .models_transformer import TransformerEncoderLayer
 import time
 
-# 可能的構想
-# 是否要將部位損益等資訊從這邊移除?
-
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
