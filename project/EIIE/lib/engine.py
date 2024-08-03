@@ -10,8 +10,10 @@ import torch
 class EngineBase():
     def __init__(self, Meta_path: str) -> None:
         self.policy = GradientPolicy()
-        self.policy.load_state_dict(torch.load(
-            Meta_path, map_location=self.policy.device))
+        checkpoint = torch.load(
+            Meta_path, map_location=self.policy.device, weights_only=True)
+
+        self.policy.load_state_dict(checkpoint)
         self.policy = self.policy.to(self.policy.device)
 
     def work(self, df: pd.DataFrame):
@@ -24,9 +26,10 @@ class EngineBase():
         # )
         # self.last_order_info = self._performance(environment=environment)
         # this is to stop EIIE,because i find it costs too much taxs and fees
-        # [('Cash_asset', 0.10379037), ('ARUSDT', 0.3012763), ('BNBUSDT', 0.2963091), ('BTCDOMUSDT', 0.2986242)] 
+        # [('Cash_asset', 0.10379037), ('ARUSDT', 0.3012763), ('BNBUSDT', 0.2963091), ('BTCDOMUSDT', 0.2986242)]
 
-        self.last_order_info =[('Cash_asset',0)] + [(each_symbol,0)for each_symbol in list(set(df['tic'].to_list()))]
+        self.last_order_info = [('Cash_asset', 0)] + [(each_symbol, 0)
+                                                      for each_symbol in list(set(df['tic'].to_list()))]
 
         new_out_put = []
         for _each_key_value in self.last_order_info:
@@ -34,12 +37,11 @@ class EngineBase():
             if _each_key_value[0] == 'Cash_asset':
                 _each_key_value[1] = 0
             else:
-                this_percent = 1 / (len(self.last_order_info) -1)
-                _each_key_value[1] = 0.25 if this_percent >0.25 else this_percent
+                this_percent = 1 / (len(self.last_order_info) - 1)
+                _each_key_value[1] = 0.25 if this_percent > 0.25 else this_percent
             new_out_put.append(tuple(_each_key_value))
 
         self.last_order_info = new_out_put
-
 
     def _performance(self, environment: PortfolioOptimizationEnv):
         """

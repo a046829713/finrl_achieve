@@ -83,7 +83,8 @@ class RL_evaluate():
         # 準備神經網絡的狀態
         state = State_time_step(bars_count=self.BARS_COUNT,
                                 commission_perc=self.MODEL_DEFAULT_COMMISSION_PERC,
-                                model_train=False
+                                model_train=False,
+                                default_slippage = self.DEFAULT_SLIPPAGE
                                 )
         # 製作環境
         self.evaluate_env = environment.Env(
@@ -110,7 +111,7 @@ class RL_evaluate():
         ).to(self.device)
         
         checkpoint = torch.load(
-            model_path, map_location=self.device)
+            model_path, map_location=self.device, weights_only=True)
 
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()  # 將模型設置為評估模式
@@ -142,6 +143,7 @@ class RL_evaluate():
     def hyperparameters(self, strategy):
         self.BARS_COUNT = strategy.model_feature_len  # 用來準備要取樣的特徵長度,例如:開高低收成交量各取10根K棒
         self.MODEL_DEFAULT_COMMISSION_PERC = 0.0005
+        self.DEFAULT_SLIPPAGE = 0.0025
 
     def _parser_order(self, action_value: int):
         if action_value == 2:

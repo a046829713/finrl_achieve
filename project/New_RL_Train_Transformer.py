@@ -11,7 +11,8 @@ from tensorboardX import SummaryWriter
 import time
 from DQN.lib import offical_transformer
 from abc import ABC, abstractmethod
-from DQN.lib.EfficientNet import EfficientNetB3
+from DQN.lib.EfficientnetV2 import EfficientnetV2SmallDuelingModel
+from abc import ABC
 
 class RL_prepare(ABC):
     def __init__(self):
@@ -38,6 +39,7 @@ class RL_prepare(ABC):
     def _prepare_symbols(self):
         symbols = ['BTCUSDT', 'ENSUSDT', 'LPTUSDT', 'GMXUSDT', 'TRBUSDT', 'ARUSDT', 'XMRUSDT',
                    'ETHUSDT', 'AAVEUSDT',  'ZECUSDT', 'SOLUSDT', 'DEFIUSDT',  'ETCUSDT', 'LTCUSDT', 'BCHUSDT']
+        # symbols = ['BTCUSDT']
         self.symbols = list(set(symbols))
         print("There are symobls:", self.symbols)
 
@@ -83,7 +85,7 @@ class RL_prepare(ABC):
                                     )
             
 
-        elif self.keyword == 'EfficientNet':
+        elif self.keyword == 'EfficientNetV2':
             state = State2D(bars_count=self.BARS_COUNT,
                                     commission_perc=self.MODEL_DEFAULT_COMMISSION_PERC,
                                     model_train=True,
@@ -105,7 +107,7 @@ class RL_prepare(ABC):
                                     )
             
 
-        elif self.keyword == 'EfficientNet':
+        elif self.keyword == 'EfficientNetV2':
             state = State2D(bars_count=self.BARS_COUNT,
                                     commission_perc=self.MODEL_DEFAULT_COMMISSION_PERC,
                                     model_train=True,
@@ -134,8 +136,8 @@ class RL_prepare(ABC):
                 dropout=0.1  # 适度的dropout以防过拟合
             ).to(self.device)
         
-        elif self.keyword == 'EfficientNet':
-            self.net = EfficientNetB3(actions_n=self.train_env.action_space.n).to(self.device)
+        elif self.keyword == 'EfficientNetV2':
+            self.net = EfficientnetV2SmallDuelingModel(in_channels = 1, num_actions=self.train_env.action_space.n).to(self.device)
 
 
         print("There is netWork model:",self.net.__class__)
@@ -178,6 +180,7 @@ class RL_Train(RL_prepare):
             checkpoint = torch.load(checkpoint_path)
             self.net.load_state_dict(checkpoint['model_state_dict'])
             self.step_idx = checkpoint['step_idx']
+            print("目前step_idx:",self.step_idx)
         else:
             print("建立新的儲存點")
             # 用來儲存的位置
@@ -257,6 +260,12 @@ class RL_Train(RL_prepare):
         print("總參數數量:", sum_numel)
         return sum_numel
 
+    def change_torch_script(self,model):
+        # 將模型轉換為 TorchScript
+        scripted_model = torch.jit.script(model)
+
+        # 保存腳本化後的模型 DQN\Meta\Meta-300B-30K.pt
+        scripted_model.save("transformer_dueling_model_scripted.pt")
 
 # 我認為可以訓練出通用的模型了
 # 多數據供應

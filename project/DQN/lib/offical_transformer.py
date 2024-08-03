@@ -50,7 +50,7 @@ class TransformerDuelingModel(nn.Module):
         
         encoder_layers = TransformerEncoderLayer(
             hidden_size, nhead, d_hid, dropout, batch_first=self.batch_first)
-        self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers, norm=nn.LayerNorm(hidden_size))
+        self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers, norm=nn.LayerNorm(hidden_size),enable_nested_tensor = False)
 
         # 狀態值網絡
         self.fc_val = nn.Sequential(

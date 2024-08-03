@@ -78,7 +78,7 @@ class DataProvider:
             self.SQL.write_Dateframe(
                 original_df, table_name, exists=exists)
 
-    def reload_all_data(self, time_type: str, symbol_type):
+    def reload_all_data(self, time_type: str, symbol_type, specify_symbol:str = None ):
         """
             Args:
             time_type (str): 
@@ -98,6 +98,11 @@ class DataProvider:
         """
         for symbol_name in self.Binanceapp.get_targetsymobls():
             try:
+                if specify_symbol:
+                    if symbol_name != specify_symbol:
+                        continue
+                    
+                
                 original_df, eachCatchDf = self.reload_data(
                     symbol_name, time_type=time_type, reload_type="History", symbol_type=symbol_type)
                 eachCatchDf.drop(

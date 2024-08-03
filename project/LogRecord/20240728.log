@@ -1,0 +1,17 @@
+2024-07-28 10:44 ERROR Traceback (most recent call last):
+  File "c:\Users\Wour\Desktop\Program\RL_trading\finrl_achieve\project\TradingSysteam.py", line 290, in main
+    current_size = self.dataprovider.Binanceapp.getfutures_account_positions()
+  File "c:\Users\Wour\Desktop\Program\RL_trading\finrl_achieve\project\Major\custom.py", line 65, in wrapper
+    result = func(self, client, *args, **kwargs)
+  File "c:\Users\Wour\Desktop\Program\RL_trading\finrl_achieve\project\Major\custom.py", line 328, in getfutures_account_positions
+    data = client.futures_account()
+  File "C:\Users\Wour\Desktop\Program\RL_trading\lib\site-packages\binance\client.py", line 6582, in futures_account
+    return self._request_futures_api('get', 'account', True, 2, data=params)
+  File "C:\Users\Wour\Desktop\Program\RL_trading\lib\site-packages\binance\client.py", line 383, in _request_futures_api
+    return self._request(method, uri, signed, True, **kwargs)
+  File "C:\Users\Wour\Desktop\Program\RL_trading\lib\site-packages\binance\client.py", line 359, in _request
+    return self._handle_response(self.response)
+  File "C:\Users\Wour\Desktop\Program\RL_trading\lib\site-packages\binance\client.py", line 368, in _handle_response
+    raise BinanceAPIException(response, response.status_code, response.text)
+binance.exceptions.BinanceAPIException: APIError(code=-1021): Timestamp for this request was 1000ms ahead of the server's time.
+

@@ -84,8 +84,11 @@ class debug():
                 print('*'*120)
             return result
         return wrapper
-    
 
+
+def print_syslog(title:str ,msg:str):    
+    print(f"--{title}--:{msg}")
+    
 class ExcessiveTradeException(Exception):
     """異常類：交易次數過多"""
     def __init__(self, message="交易次數過多，已觸發緊急狀況處理"):

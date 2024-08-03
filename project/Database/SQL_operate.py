@@ -102,7 +102,7 @@ class SqlSentense():
                     ('{result['phone_number']}', '{result['binance_api_account']}', 
                     '{result['binance_api_passwd']}', '{result['line_token']}');
                     """
-
+        print(sql_query)
         return sql_query
 
 
@@ -162,3 +162,7 @@ class SqlSentense():
                     PRIMARY KEY(`ID`));
             """
         return sql_query
+
+
+
+

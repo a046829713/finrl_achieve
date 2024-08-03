@@ -9,7 +9,7 @@ from Infrastructure.AlertMsg import LINE_Alert
 import pandas as pd
 import copy
 from utils import Debug_tool, Data_parser
-from utils.Debug_tool import ExcessiveTradeException
+from utils.Debug_tool import ExcessiveTradeException, print_syslog
 from binance.exceptions import BinanceAPIException
 from EIIE.lib.engine import EngineBase
 from DQN.lib.engine import EngineBase as DQN_EngineBase
@@ -21,6 +21,7 @@ class Trading_system():
     def __init__(self) -> None:
         DatabasePreparator()  # 系統初始化等檢查
         self.dataprovider = DataProvider()  # 創建資料庫的連線
+        self.strategy_keyword = 'ONE_TO_MANY'
         self.buildEngine()  # 建立引擎
         self.systeam_setting = AppSetting.systeam_setting()
         self.GuiStartDay = str(datetime.date.today())
@@ -37,7 +38,7 @@ class Trading_system():
         """
         meta_path = os.path.join('EIIE', 'Meta', 'policy_EIIE.pt')
         self.engine = EngineBase(Meta_path=meta_path)
-        self.DQN_engin = DQN_EngineBase()
+        self.DQN_engin = DQN_EngineBase(self.strategy_keyword)
 
     def DailyChange(self):
         """
@@ -161,30 +162,37 @@ class AsyncTrading_system(Trading_system):
             這邊才是正式開始交易的地方，父類別大多擔任準備工作和函數提供
         """
         super().__init__()
+
         self.checkDailydata()  # 檢查日線資料
         self.process_target_symbol()  # 取得要交易的標的
         # 將標得注入引擎
         self.asyncDataProvider = AsyncDataProvider()
 
+
+
     def process_target_symbol(self):
         """
            商品改成非動態的，因為會變成指定的
         """
-        old_symbol = self.dataprovider.Binanceapp.getfutures_account_name()  # 第一次運行會是空的
-        # 合併舊的商品 因為這樣更新的商品的時候可以把庫存清掉
-        self.targetsymbols = list(set(old_symbol + self.DQN_engin.symbols))
-        
 
-    # def process_target_symbol(self):
-    #     # 取得要交易的標的
-    #     market_symobl = list(map(lambda x: x[0], self.get_target_symbol()))
+        if self.strategy_keyword == 'ONE_TO_MANY':
+            # 取得要交易的標的
+            market_symobl = list(map(lambda x: x[0], self.get_target_symbol()))
 
-    #     # 取得binance實際擁有標的,合併 (因為原本有部位的也要持續追蹤)
-    #     self.targetsymbols = self.datatransformer.target_symobl(
-    #         market_symobl, self.dataprovider.Binanceapp.getfutures_account_name())        
+            # 取得binance實際擁有標的,合併 (因為原本有部位的也要持續追蹤)
+            self.targetsymbols = self.datatransformer.target_symobl(
+                market_symobl, self.dataprovider.Binanceapp.getfutures_account_name())
 
-    #     print("目前交易商品:",self.targetsymbols)
+        elif self.strategy_keyword == 'ONE_TO_ONE':
+            old_symbol = self.dataprovider.Binanceapp.getfutures_account_name()  # 第一次運行會是空的
+            # 合併舊的商品 因為這樣更新的商品的時候可以把庫存清掉
+            self.targetsymbols = list(set(old_symbol + self.DQN_engin.symbols))
+        else:
+            raise ValueError("STRATEGY_KEYWORD didn't match,please check")
 
+        # 用來判斷一個模型的模式        # 一對多        # 一對一
+        print_syslog(title='STRATEGY_KEYWORD', msg=self.strategy_keyword)
+        print_syslog(title='TARGETSYMBOLS', msg=self.targetsymbols)
 
     def check_money_level(self):
         """
@@ -233,8 +241,9 @@ class AsyncTrading_system(Trading_system):
 
         # 透過迴圈回補資料
         while not exit_event.is_set():
-            try:
+            try:                
                 if datetime.datetime.now().minute != last_min or last_min is None:
+                    print("現在時間:",datetime.datetime.now())
                     begin_time = time.time()
                     # 取得原始資料
                     all_data_copy = await self.asyncDataProvider.get_all_data()
@@ -251,16 +260,14 @@ class AsyncTrading_system(Trading_system):
                     self.printfunc("開始進入回測")
 
                     # # DQN 準備策略
-                    # self.DQN_engin.strategy_prepare(self.targetsymbols)
+                    self.DQN_engin.strategy_prepare(self.targetsymbols)
 
                     # 準備將資料塞入神經網絡或是策略裡面
                     finally_df = self.dataprovider.get_trade_data(
                         self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'])
 
-
                     # 在底層(oderbacktest會將最後一個拋棄)
                     if_order_map = self.DQN_engin.get_if_order_map(finally_df)
-                    print(if_order_map)
                     
                     finally_df = self.dataprovider.datatransformer.filter_last_time_series(
                         finally_df)
@@ -272,6 +279,7 @@ class AsyncTrading_system(Trading_system):
 
                     last_status = self.engine.get_order(
                         finally_df, balance_balance_map, leverage=self.engine_setting['LEVERAGE'])
+
 
                     last_status = self._filter_if_not_trade(
                         last_status, if_order_map)
@@ -293,7 +301,7 @@ class AsyncTrading_system(Trading_system):
 
                     self.printfunc("差異單", all_order_finally)
                     self.dataprovider.Binanceapp.execute_orders(
-                            all_order_finally, current_size=current_size, symbol_map=self.symbol_map, formal=self.systeam_setting['execute_orders'])
+                        all_order_finally, current_size=current_size, symbol_map=self.symbol_map, formal=self.systeam_setting['execute_orders'])
 
                     self.printfunc("時間差", time.time() - begin_time)
                     last_min = datetime.datetime.now().minute

@@ -7,11 +7,9 @@ import time
 import os
 
 
-# 目前沒有連接 Strategy 和 RL_evaluate
-setting = AppSetting.get_DQN_setting()
-
 
 def creaet_strategy(model_path:str,symbol:str):
+    setting = AppSetting.RL_test_setting()
     # DQN\Meta\ORDIUSDT-300B-30K.pt
     # DQN\Meta\Meta.pt
     info,feature,data = model_path.split('-')
@@ -29,7 +27,7 @@ def creaet_strategy(model_path:str,symbol:str):
     strategy.load_data(local_data_path=f'DQN\simulation\data\{symbol}-F-{data_len}-Min.csv')
     return strategy
 
-strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='BTCUSDT') # KSMUSDT TRBUSDT MKRUSDT
+strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='SOLUSDT') # KSMUSDT TRBUSDT MKRUSDT
 
 
 # def creaet_strategy(model_path:str):
