@@ -37,8 +37,7 @@ class RL_prepare(ABC):
         print("There is device:", self.device)
 
     def _prepare_symbols(self):
-        symbols = ['BTCUSDT', 'ENSUSDT', 'LPTUSDT', 'GMXUSDT', 'TRBUSDT', 'ARUSDT', 'XMRUSDT',
-                   'ETHUSDT', 'AAVEUSDT',  'ZECUSDT', 'SOLUSDT', 'DEFIUSDT',  'ETCUSDT', 'LTCUSDT', 'BCHUSDT']
+        symbols = ['PEOPLEUSDT','BTCUSDT', 'ENSUSDT', 'LPTUSDT', 'GMXUSDT', 'TRBUSDT', 'ARUSDT', 'XMRUSDT', 'ETHUSDT', 'AAVEUSDT', 'ZECUSDT', 'SOLUSDT', 'DEFIUSDT', 'ETCUSDT', 'LTCUSDT', 'BCHUSDT', 'ORDIUSDT', 'BNBUSDT', 'AVAXUSDT', 'MKRUSDT', 'BTCDOMUSDT']
         # symbols = ['BTCUSDT']
         self.symbols = list(set(symbols))
         print("There are symobls:", self.symbols)
@@ -75,7 +74,7 @@ class RL_prepare(ABC):
         self.STATES_TO_EVALUATE = 10000  # 每次驗證一萬筆資料
         self.terminate_times = 8000000
         self.checkgrad_times = 1000
-
+    
     def _prepare_env(self):
         if self.keyword == 'Transformer':
             state = State_time_step(bars_count=self.BARS_COUNT,
@@ -107,7 +106,7 @@ class RL_prepare(ABC):
                 d_model=engine_info['input_size'],
                 nhead=2,
                 d_hid=2048,
-                nlayers=4,
+                nlayers=8,
                 num_actions=self.train_env.action_space.n,  # 假设有5种可能的动作
                 hidden_size=64,  # 使用隐藏层
                 seq_dim=self.BARS_COUNT,
@@ -135,7 +134,7 @@ class RL_Train(RL_prepare):
     def __init__(self) -> None:
         super().__init__()
         self.count_parameters(self.net)
-
+        
         self.exp_source = ptan.experience.ExperienceSourceFirstLast(
             self.train_env, self.agent, self.GAMMA, steps_count=self.REWARD_STEPS)
 

@@ -27,7 +27,8 @@ def creaet_strategy(model_path:str,symbol:str):
     strategy.load_data(local_data_path=f'DQN\simulation\data\{symbol}-F-{data_len}-Min.csv')
     return strategy
 
-strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='SOLUSDT') # KSMUSDT TRBUSDT MKRUSDT
+# KSMUSDT is very special
+strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='GMXUSDT') # KSMUSDT TRBUSDT MKRUSDT
 
 
 # def creaet_strategy(model_path:str):

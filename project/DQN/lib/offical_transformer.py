@@ -47,37 +47,47 @@ class TransformerDuelingModel(nn.Module):
         super().__init__()
         self.batch_first = batch_first
         self.pos_encoder = PositionalEncoding(hidden_size, dropout)
-        
+
         encoder_layers = TransformerEncoderLayer(
             hidden_size, nhead, d_hid, dropout, batch_first=self.batch_first)
-        self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers, norm=nn.LayerNorm(hidden_size),enable_nested_tensor = False)
+
+        self.transformer_encoder = TransformerEncoder(
+            encoder_layers, nlayers, norm=nn.LayerNorm(hidden_size), enable_nested_tensor=False)
 
         # 狀態值網絡
         self.fc_val = nn.Sequential(
-            nn.Linear(seq_dim *hidden_size // 8, 1024),
+            nn.Linear(seq_dim * hidden_size // 8, 512),
+            nn.LayerNorm(512),
             nn.ReLU(),
-            # nn.Dropout(dropout),
-            nn.Linear(1024, 1)
+            nn.Dropout(dropout),
+            nn.Linear(512, 256),
+            nn.LayerNorm(256),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(256, 1)
         )
 
         # 優勢網絡
         self.fc_adv = nn.Sequential(
-            # input_dim = 6,hidden_size = 1024
-            nn.Linear(seq_dim * hidden_size // 8, 1024),
+            nn.Linear(seq_dim * hidden_size // 8, 512),
+            nn.LayerNorm(512),
             nn.ReLU(),
-            # nn.Dropout(dropout),
-            nn.Linear(1024, num_actions)
+            nn.Dropout(dropout),
+            nn.Linear(512, 256),
+            nn.LayerNorm(256),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(256, num_actions)
         )
 
-        
         self.linear = nn.Sequential(
-            nn.Linear( hidden_size, hidden_size // 2),
+            nn.Linear(hidden_size, hidden_size // 2),
             nn.ReLU(),
-            # nn.Dropout(dropout),
+            nn.Dropout(dropout),
             nn.Linear(hidden_size // 2, hidden_size // 4),
             nn.ReLU(),
-            # nn.Dropout(dropout),
-            nn.Linear(hidden_size// 4, hidden_size // 8)
+            nn.Dropout(dropout),
+            nn.Linear(hidden_size // 4, hidden_size // 8)
         )
 
         # 將資料映射
@@ -88,17 +98,16 @@ class TransformerDuelingModel(nn.Module):
         )
 
         self.embed_ln = nn.LayerNorm(hidden_size)  # 層歸一化
-        
 
         # 初始化權重
         self.apply(self._init_weights)
+
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')  # He初始化
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
-
 
     def forward(self, src: Tensor) -> Tensor:
         """
@@ -107,7 +116,7 @@ class TransformerDuelingModel(nn.Module):
 
         Returns:
             output Tensor of shape ``[batch_size, num_actions]``
-            
+
         """
         src = self.embedding(src)
 
@@ -118,7 +127,7 @@ class TransformerDuelingModel(nn.Module):
             src = self.pos_encoder(src)
 
         src = self.embed_ln(src.transpose(0, 1))
-        
+
         if self.batch_first:
             output = self.transformer_encoder(src)
         else:
@@ -128,10 +137,15 @@ class TransformerDuelingModel(nn.Module):
         x = self.linear(output)
         x = x.view(x.size(0), -1)
 
+
+
         value = self.fc_val(x)
         # 狀態值和優勢值
         advantage = self.fc_adv(x)
 
         # 計算最終的Q值
         q_values = value + (advantage - advantage.mean(dim=1, keepdim=True))
+        
+
+        
         return q_values
