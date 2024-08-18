@@ -7,7 +7,7 @@ import pandas as pd
 from sqlalchemy import text
 
 
-class DatabasePreparator:
+class BasePreparator:
     def __init__(self, backup_folder="backup", log_folder='LogRecord'):
         self.backup_folder = backup_folder
         self.log_folder = log_folder
@@ -120,7 +120,7 @@ class DatabaseBackupRestore:
     
     def export_table_data(self, table_name: str):
         """
-            將avgloss資料匯出
+            將table資料匯出
         """
         df = self.SQL.read_Dateframe(table_name)
         df.to_csv(f"{table_name}.csv")

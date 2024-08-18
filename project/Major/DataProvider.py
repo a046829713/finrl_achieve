@@ -88,12 +88,11 @@ class DataProvider:
             為了避免寫入過慢 更改成append
 
             2023.04.18
-                TODO:
-                    lewis MSG:
-                        i find bug in pandas to sql 
-                        in SQLAlchemy==2.XX.XX no error but mysql database can't insert data
-                        so i reply SQLAlchemy==1.4.44
-                        if future can try to fix this bug 
+                lewis MSG:
+                    i find bug in pandas to sql 
+                    in SQLAlchemy==2.XX.XX no error but mysql database can't insert data
+                    so i reply SQLAlchemy==1.4.44
+                    if future can try to fix this bug 
 
         """
         for symbol_name in self.Binanceapp.get_targetsymobls():
@@ -107,6 +106,7 @@ class DataProvider:
                     symbol_name, time_type=time_type, reload_type="History", symbol_type=symbol_type)
                 eachCatchDf.drop(
                     [eachCatchDf.index[0], eachCatchDf.index[-1]], inplace=True)
+                
                 if len(eachCatchDf) != 0:
                     eachCatchDf.set_index('Datetime', inplace=True)
                     self.save_data(symbol_name, eachCatchDf, symbol_type, time_type,

@@ -98,28 +98,6 @@ class RL_prepare(ABC):
         self.train_env = environment.Env(
             prices=self.data, state=state, random_ofs_on_reset=True)
     
-    def _prepare_env(self):
-        if self.keyword == 'Transformer':
-            state = State_time_step(bars_count=self.BARS_COUNT,
-                                    commission_perc=self.MODEL_DEFAULT_COMMISSION_PERC,
-                                    model_train=True,
-                                    default_slippage = self.DEFAULT_SLIPPAGE
-                                    )
-            
-
-        elif self.keyword == 'EfficientNetV2':
-            state = State2D(bars_count=self.BARS_COUNT,
-                                    commission_perc=self.MODEL_DEFAULT_COMMISSION_PERC,
-                                    model_train=True,
-                                    default_slippage = self.DEFAULT_SLIPPAGE
-                                    )
-
-        print("There is state:",state)    
-        
-        # 製作環境
-        self.train_env = environment.Env(
-            prices=self.data, state=state, random_ofs_on_reset=True)
-    
     def _prepare_model(self):
         engine_info = self.train_env.engine_info()
 

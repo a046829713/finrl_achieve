@@ -46,7 +46,7 @@ def example_get_MTM_target_symbol():
     example = Datatransformer().get_mtm_filter_symbol(all_symbols)
     print(example)
 
-def example_reload_all_data(time_type: str,specify_symbol:str = None):
+def example_reload_all_data(time_type: str, specify_symbol:str = None):
     """
     Args:
         time_type (str): '1m','1d'
@@ -70,4 +70,5 @@ def example_simple_evaluate():
                                     Meta_path=r'EIIE\Meta\policy_EIIE.pt')
 
 
-example_reload_all_data(time_type='1m',specify_symbol="QNTUSDT")
+# example_reload_all_data(time_type='1d')
+example_get_MTM_target_symbol()

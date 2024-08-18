@@ -1,4 +1,4 @@
-from Database.BackUp import DatabasePreparator, DatabaseBackupRestore
+from Database.BackUp import BasePreparator, DatabaseBackupRestore
 from Major.DataProvider import DataProvider, AsyncDataProvider
 from utils.AppSetting import AppSetting
 from datetime import timedelta
@@ -19,14 +19,19 @@ import os
 
 class Trading_system():
     def __init__(self) -> None:
-        DatabasePreparator()  # 系統初始化等檢查
+        BasePreparator()  # 系統初始化等檢查
+
         self.dataprovider = DataProvider()  # 創建資料庫的連線
         self.strategy_keyword = 'ONE_TO_MANY'
+
         self.buildEngine()  # 建立引擎
         self.systeam_setting = AppSetting.systeam_setting()
+
         self.GuiStartDay = str(datetime.date.today())
         self.datatransformer = Data_parser.Datatransformer()
+
         self.symbol_map = {}
+
         # 這次新產生的資料
         self.new_symbol_map = {}
         self.engine_setting = AppSetting.engine_setting()
@@ -72,10 +77,16 @@ class Trading_system():
     def checkDailydata(self):
         """
             檢查資料庫中的日資料是否已經回補
-            if already update then contiune
+
+
+            if already update then contiune.            
+            Originally, daily data only reloaded the FUTURES type, but now it also reloads the SPOT type.
+
+            symbol_type (str):  ('FUTURES', 'SPOT')
         """
         data = self.dataprovider.SQL.get_db_data(
             """select *  from `btcusdt-f-d` order by Datetime desc limit 1""")
+
         sql_date = str(data[0][0]).split(' ')[0]
         _todaydate = str((datetime.datetime.today() -
                          timedelta(days=1))).split(' ')[0]
@@ -84,6 +95,7 @@ class Trading_system():
             # 更新日資料 並且在回補完成後才繼續進行 即時行情的回補
             self.dataprovider.reload_all_data(
                 time_type='1d', symbol_type='FUTURES')
+
         else:
             # 判斷幣安裡面所有可交易的標的
             allsymobl = self.dataprovider.Binanceapp.get_targetsymobls()
@@ -96,6 +108,7 @@ class Trading_system():
             if list(filter(lambda x: False if x.lower() + "-f-d" in all_tables else True, allsymobl)):
                 self.dataprovider.reload_all_data(
                     time_type='1d', symbol_type='FUTURES')
+
 
     def get_target_symbol(self):
         """ 
@@ -160,15 +173,19 @@ class AsyncTrading_system(Trading_system):
     def __init__(self) -> None:
         """
             這邊才是正式開始交易的地方，父類別大多擔任準備工作和函數提供
+
+
+
+            1. 開始研究如何將更多資料寫入DB
+
         """
         super().__init__()
 
         self.checkDailydata()  # 檢查日線資料
         self.process_target_symbol()  # 取得要交易的標的
-        # 將標得注入引擎
+
+        # 將標得注入引擎 #這邊可能需要獲取更多資料
         self.asyncDataProvider = AsyncDataProvider()
-
-
 
     def process_target_symbol(self):
         """
@@ -217,14 +234,42 @@ class AsyncTrading_system(Trading_system):
 
         """
         new_last_status = copy.deepcopy(last_status)
-        for key, order_data in last_status.items():
+        for user, order_data in last_status.items():
             for symbol in (order_data.keys()):
-                _result = if_order_map.get(symbol, None)
-                if _result == 0:
-                    new_last_status[key].pop(symbol)
+                if if_order_map.get(symbol) == 0:
+                    new_last_status[user].pop(symbol)
 
         return new_last_status
+    
+    def generate_order_map(self) -> dict:        
+        # # DQN 準備策略
+        self.DQN_engin.strategy_prepare(self.targetsymbols)
 
+        # 準備將資料塞入神經網絡或是策略裡面
+        finally_df = self.dataprovider.get_trade_data(
+            self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'])
+
+        # 在底層(oderbacktest會將最後一個拋棄)
+        if_order_map = self.DQN_engin.get_if_order_map(finally_df)
+
+        finally_df = self.dataprovider.datatransformer.filter_last_time_series(
+            finally_df)
+
+        self.engine.work(finally_df)
+
+        # 取得所有戶頭的平衡資金才有辦法去運算口數
+        balance_balance_map = self.check_money_level()
+
+        last_status = self.engine.get_order(
+            finally_df, balance_balance_map, leverage=self.engine_setting['LEVERAGE'])
+
+        last_status = self._filter_if_not_trade(
+            last_status, if_order_map)
+
+        self.printfunc('目前交易狀態,校正之後', last_status)
+        
+        return last_status
+    
     async def main(self):
         self.printfunc("Crypto_trading 正式交易啟動")
         LINE_Alert().send_author("Crypto_trading 正式交易啟動")
@@ -241,9 +286,9 @@ class AsyncTrading_system(Trading_system):
 
         # 透過迴圈回補資料
         while not exit_event.is_set():
-            try:                
+            try:
                 if datetime.datetime.now().minute != last_min or last_min is None:
-                    print("現在時間:",datetime.datetime.now())
+                    print("現在時間:", datetime.datetime.now())
                     begin_time = time.time()
                     # 取得原始資料
                     all_data_copy = await self.asyncDataProvider.get_all_data()
@@ -258,33 +303,8 @@ class AsyncTrading_system(Trading_system):
                         self.get_catch(name, eachCatchDf)
 
                     self.printfunc("開始進入回測")
-
-                    # # DQN 準備策略
-                    self.DQN_engin.strategy_prepare(self.targetsymbols)
-
-                    # 準備將資料塞入神經網絡或是策略裡面
-                    finally_df = self.dataprovider.get_trade_data(
-                        self.targetsymbols, self.symbol_map, freq=self.engine_setting['FREQ_TIME'])
-
-                    # 在底層(oderbacktest會將最後一個拋棄)
-                    if_order_map = self.DQN_engin.get_if_order_map(finally_df)
                     
-                    finally_df = self.dataprovider.datatransformer.filter_last_time_series(
-                        finally_df)
-
-                    self.engine.work(finally_df)
-
-                    # 取得所有戶頭的平衡資金才有辦法去運算口數
-                    balance_balance_map = self.check_money_level()
-
-                    last_status = self.engine.get_order(
-                        finally_df, balance_balance_map, leverage=self.engine_setting['LEVERAGE'])
-
-
-                    last_status = self._filter_if_not_trade(
-                        last_status, if_order_map)
-
-                    self.printfunc('目前交易狀態,校正之後', last_status)
+                    last_status = self.generate_order_map()
 
                     current_size = self.dataprovider.Binanceapp.getfutures_account_positions()
                     self.printfunc("目前binance交易所內的部位狀態:", current_size)
@@ -302,7 +322,6 @@ class AsyncTrading_system(Trading_system):
                     self.printfunc("差異單", all_order_finally)
                     self.dataprovider.Binanceapp.execute_orders(
                         all_order_finally, current_size=current_size, symbol_map=self.symbol_map, formal=self.systeam_setting['execute_orders'])
-
                     self.printfunc("時間差", time.time() - begin_time)
                     last_min = datetime.datetime.now().minute
                     self.timewritersql()

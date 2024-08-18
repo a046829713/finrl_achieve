@@ -200,6 +200,8 @@ class Datatransformer:
         """
         compare_dict = {}
         for each_data in all_symbols:
+            print(each_data)
+            print('*'*120)
             symbolname = each_data[0]
             data = each_data[1]
             # 不想要太新的商品
