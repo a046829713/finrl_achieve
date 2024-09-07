@@ -106,7 +106,7 @@ class RL_prepare(ABC):
                 d_model=engine_info['input_size'],
                 nhead=2,
                 d_hid=2048,
-                nlayers=8,
+                nlayers=12,
                 num_actions=self.train_env.action_space.n,  # 假设有5种可能的动作
                 hidden_size=64,  # 使用隐藏层
                 seq_dim=self.BARS_COUNT,

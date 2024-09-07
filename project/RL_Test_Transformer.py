@@ -28,7 +28,7 @@ def creaet_strategy(model_path:str,symbol:str):
     return strategy
 
 # KSMUSDT is very special
-strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='GMXUSDT') # KSMUSDT TRBUSDT MKRUSDT
+strategy = creaet_strategy('DQN\Meta\Meta-300B-30K.pt', symbol='KSMUSDT') # KSMUSDT TRBUSDT MKRUSDT
 
 
 # def creaet_strategy(model_path:str):
