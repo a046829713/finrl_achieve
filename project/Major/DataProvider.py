@@ -42,7 +42,7 @@ class DataProvider:
                 df = self.SQL.read_Dateframe(SQL_Q)
 
             elif reload_type == 'Online':
-                parser_date = str(datetime.date.today() + timedelta(days=-100))
+                parser_date = str(datetime.date.today() + timedelta(days=-30))
                 df = self.SQL.read_Dateframe(
                     f'SELECT * FROM `{table_name}` where Datetime > "{parser_date}"')
 
